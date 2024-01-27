@@ -1,0 +1,7 @@
+{
+	"name": "sigan-io/serverless-wp",
+	"require": {
+		"bref/bref": "^2.1",
+		"bref/logger": "^1.0"
+	}
+}

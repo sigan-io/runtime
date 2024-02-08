@@ -21,6 +21,8 @@ RUN LD_LIBRARY_PATH= dnf install -y tar
 RUN LD_LIBRARY_PATH= dnf install -y gzip
 RUN LD_LIBRARY_PATH= dnf install -y gcc
 RUN LD_LIBRARY_PATH= dnf install -y g++
+RUN LD_LIBRARY_PATH= dnf install -y re2c
+RUN LD_LIBRARY_PATH= dnf install -y bison
 RUN LD_LIBRARY_PATH= dnf install -y autoconf
 RUN LD_LIBRARY_PATH= dnf install -y automake
 RUN LD_LIBRARY_PATH= dnf install -y libtool
@@ -165,6 +167,6 @@ WORKDIR ${INSTALL_DIR}/sigan/config/
 
 COPY ./config/php.ini .
 COPY ./config/php-fpm.ini .
-COPY ./config/php-fpm.confg .
+COPY ./config/php-fpm.conf .
 
 CMD ["/bin/sh"]

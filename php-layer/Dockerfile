@@ -15,7 +15,7 @@ ARG LD_LIBRARY_PATH=${INSTALL_DIR}/lib:${INSTALL_DIR}/lib64:${LD_LIBRARY_PATH}
 # Sets the number of parallel build jobs for CMake and Make
 ARG CMAKE_BUILD_PARALLEL_LEVEL=4
 
-### Install dependencies ###
+### Install Dependencies ###
 
 RUN LD_LIBRARY_PATH= dnf install -y tar
 RUN LD_LIBRARY_PATH= dnf install -y gzip
@@ -38,7 +38,7 @@ ARG PHP_VERSION=8.3.2
 
 WORKDIR ${BUILD_DIR}/php/
 
-RUN curl --location --silent --show-error --fail https://www.php.net/get/php-${PHP_VERSION}.tar.gz/from/this/mirror \
+RUN curl --location --silent --show-error --fail https://github.com/php/php-src/archive/refs/tags/php-${PHP_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
 
 ARG STRIP=--strip-debug
@@ -57,11 +57,11 @@ RUN CFLAGS="-fstack-protector-strong -fpic -fpie -O3 -I${INSTALL_DIR}/include -I
   --with-config-file-path=/opt/sigan/etc/php \
   # Disable extensions and binaries that are not needed
   --disable-all \
-  --disable-cgi \
   --disable-cli \
   --disable-phpdbg \
-  # Enable FPM as the only binary
+  # Enable desired binaries
   --enable-fpm \
+  --enable-cgi \
   # Required by WP
   --with-mysqli \
   # Highly Recommended by WP
@@ -76,6 +76,7 @@ RUN CFLAGS="-fstack-protector-strong -fpic -fpie -O3 -I${INSTALL_DIR}/include -I
   --enable-xml \
   --with-zip \
   # Others
+  --enable-session \
   --enable-bcmath \
   --enable-filter \
   --enable-shmop \
@@ -91,11 +92,12 @@ RUN make clean
 
 ### Build igbinary extension ###
 
-WORKDIR ${BUILD_DIR}
-
-RUN git clone https://github.com/igbinary/igbinary.git
+ARG IGBINARY_VERSION=3.2.15
 
 WORKDIR ${BUILD_DIR}/igbinary/
+
+RUN curl --location --silent --show-error --fail https://github.com/igbinary/igbinary/archive/refs/tags/${IGBINARY_VERSION}.tar.gz \
+  | tar xzC . --strip-components=1
 
 RUN phpize
 RUN CFLAGS="-O3" \
@@ -107,11 +109,12 @@ RUN make clean
 
 ### Build redis extension ###
 
-WORKDIR ${BUILD_DIR}
-
-RUN git clone https://github.com/phpredis/phpredis.git
+ARG PHPREDIS_VERSION=6.0.2
 
 WORKDIR ${BUILD_DIR}/phpredis/
+
+RUN curl --location --silent --show-error --fail https://github.com/phpredis/phpredis/archive/refs/tags/${PHPREDIS_VERSION}.tar.gz \
+  | tar xzC . --strip-components=1
 
 RUN phpize
 RUN CFLAGS="-O3" \
@@ -123,11 +126,12 @@ RUN make clean
 
 ### Build imagick extension ###
 
-WORKDIR ${BUILD_DIR}
-
-RUN git clone https://github.com/Imagick/imagick
+ARG IMAGICK_VERSION=3.7.0
 
 WORKDIR ${BUILD_DIR}/imagick/
+
+RUN curl --location --silent --show-error --fail https://github.com/Imagick/imagick/archive/refs/tags/${IMAGICK_VERSION}.tar.gz \
+  | tar xzC . --strip-components=1
 
 RUN phpize
 RUN CFLAGS="-O3" \
@@ -135,5 +139,32 @@ RUN CFLAGS="-O3" \
 RUN make -j $(nproc)
 RUN make install
 RUN make clean
+
+### Put together the runtime ###
+
+FROM public.ecr.aws/lambda/provided:al2023-arm64 as final
+
+ARG INSTALL_DIR=/opt
+
+### Copy PHP binaries ###
+
+WORKDIR ${INSTALL_DIR}/bin/
+
+COPY --from=build ${INSTALL_DIR}/bin/php-cgi .
+COPY --from=build ${INSTALL_DIR}/sbin/php-fpm .
+
+### Copy PHP extensions ###
+
+WORKDIR ${INSTALL_DIR}/sigan/extensions/
+
+COPY --from=build ${INSTALL_DIR}/lib/php/extensions/*/* .
+
+### Copy PHP configuration ###
+
+WORKDIR ${INSTALL_DIR}/sigan/config/
+
+COPY ./config/php.ini .
+COPY ./config/php-fpm.ini .
+COPY ./config/php-fpm.confg .
 
 CMD ["/bin/sh"]

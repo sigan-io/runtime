@@ -15,3 +15,6 @@ upload:
 clean:
   rm -rf wp-runtime-prod/vendor
   rm -rf dist
+
+build:
+  docker build -t php-82 ./php-layer

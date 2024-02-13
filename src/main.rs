@@ -1,4 +1,5 @@
 use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
+use std::process::Command;
 use tracing_subscriber::filter::{EnvFilter, LevelFilter};
 
 /// This is the main body for the function.
@@ -36,6 +37,19 @@ async fn main() -> Result<(), Error> {
         // disabling time is handy because CloudWatch will add the ingestion time.
         .without_time()
         .init();
+
+    Command::new("mkdir")
+        .arg("-p")
+        .arg("/tmp/.sigan")
+        .spawn()
+        .expect("Failed to create /tmp/.sigan directory");
+
+    let php = Command::new("php-cgi")
+        .arg("--bindpath=/tmp/.sigan/php-cgi.sock")
+        .spawn()
+        .expect("Failed to spawn php-cgi process");
+
+    println!("php-cgi process started: {:?}", php.id());
 
     run(service_fn(function_handler)).await
 }

@@ -16,5 +16,26 @@ clean:
   rm -rf wp-runtime-prod/vendor
   rm -rf dist
 
-build:
-  docker build -t php-82 ./php-layer
+build-libraries:
+  docker build --target build-libraries --tag libraries .
+
+build-build-php:
+  docker build --target build-php --tag build-php .
+
+build-php:
+  docker build --target php --tag php .
+
+build-dev:
+  docker build --target runtime-dev --tag runtime-dev .
+
+run-libraries:
+  docker run --rm --name libraries libraries /bin/sh
+
+run-build-php:
+  docker run --rm --name build-php build-php /bin/sh
+
+run-php:
+  docker run --rm --name php php /bin/sh
+
+run-dev:
+  docker run --rm --volume ./:/mnt/runtime --name runtime-dev --entrypoint /bin/sh runtime-dev -c "cargo lambda watch -a 127.0.0.1 -p 9000"

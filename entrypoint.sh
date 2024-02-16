@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Start the AWS Runtime API
-echo -e "\n INFO Starting the AWS Lambda Runtime API..."
+echo -e "\n \e[32mINFO\e[0m Starting the AWS Lambda Runtime API..."
 
 cargo lambda watch \
   --ignore-changes \
@@ -11,12 +11,14 @@ cargo lambda watch \
   >/dev/null 2>&1 &
 
 # Watch the runtime for changes and rebuild the project
-echo -e "\n INFO Initializing WordPress Runtime..."
+echo -e "\n \e[32mINFO\e[0m Initializing watcher..."
 
 exec cargo watch \
   --quiet \
-  --exec 'check --color always' \
-  --exec 'build --color always' \
-  --shell 'cp ${RUNTIME_DEV_DIR}/target/debug/runtime ${RUNTIME_DIR}/bootstrap && \
-    echo -e "\n INFO Starting WordPress Runtime...\n" && \
+  --shell  \
+    'echo -e "\n \e[32mINFO\e[0m Building runtime...\n" && \
+    cargo check --color always && \
+    cargo build --color always && \
+    cp ${RUNTIME_DEV_DIR}/target/debug/runtime ${RUNTIME_DIR}/bootstrap && \
+    echo -e "\n \e[32mINFO\e[0m Starting runtime...\n" && \
     /var/task/bootstrap'

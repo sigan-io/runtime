@@ -41,10 +41,11 @@ run-dev:
   docker run \
     --rm \
     --init \
+    --env HOST_PORT=3000 \
     --publish 3000:8080 \
-    --volume ./Cargo.toml:/mnt/runtime/Cargo.toml \
-    --volume ./Cargo.lock:/mnt/runtime/Cargo.lock \
-    --volume ./src:/mnt/runtime/src \
-    --volume ./target:/mnt/runtime/target \
+    --volume "$(pwd)/Cargo.toml:/mnt/runtime/Cargo.toml" \
+    --volume "$(pwd)/Cargo.lock:/mnt/runtime/Cargo.lock" \
+    --volume "$(pwd)/src:/mnt/runtime/src" \
+    --volume "$(pwd)/target:/mnt/runtime/target" \
     --name runtime-dev \
     runtime-dev

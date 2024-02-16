@@ -1,14 +1,14 @@
-use fastcgi_client::conn::KeepAlive;
-use fastcgi_client::{Client as FastCGIClient, Params as FastCGIParams, Request as FastCGIRequest};
+// use fastcgi_client::conn::KeepAlive;
+// use fastcgi_client::{Client as FastCGIClient, Params as FastCGIParams, Request as FastCGIRequest};
 use lambda_http::{run, service_fn, Body, Error, Request, Response};
 use std::fs;
 use std::path::Path;
-use std::process::Command;
-use std::sync::Arc;
+// use std::process::Command;
+// use std::sync::Arc;
 use tokio::net::UnixStream;
-use tokio::sync::Mutex;
+// use tokio::sync::Mutex;
 use tokio::time::{interval, Duration, Instant};
-use tracing::info;
+use tracing::{debug, info, Level};
 
 /// This is the main body for the function.
 /// Write your code inside it.
@@ -21,9 +21,12 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    let host_port = std::env::var("HOST_PORT").expect("HOST_PORT must be set");
     tracing_subscriber::fmt()
+        .with_max_level(Level::INFO)
         .without_time()
         .with_target(false)
+        .with_ansi(true)
         .init();
 
     // .with_env_filter(
@@ -51,12 +54,12 @@ async fn main() -> Result<(), Error> {
 
     // run(service_fn(|event| function_handler(event, client.clone()))).await
 
-    info!("Starting server...\n");
+    info!("Runtime listening to http://localhost:{host_port}\n");
 
     run(service_fn(|event| function_handler(event))).await
 }
 
-fn ensure_socket() -> Result<&'static str, Error> {
+fn _ensure_socket() -> Result<&'static str, Error> {
     let socket_path = Path::new("/tmp/.sigan/php-cgi.sock");
 
     if socket_path.exists() {
@@ -80,7 +83,7 @@ fn ensure_socket() -> Result<&'static str, Error> {
         .expect("Failed to convert path to string"))
 }
 
-async fn connect_to_socket(socket_path: &'static str) -> Result<UnixStream, Error> {
+async fn _connect_to_socket(socket_path: &'static str) -> Result<UnixStream, Error> {
     let timeout = Duration::from_secs(5);
     let mut interval = interval(Duration::from_millis(100));
     let start_time = Instant::now();
@@ -112,7 +115,7 @@ async fn function_handler(_event: Request) -> Result<Response<Body>, Error> {
     //     .unwrap_or("world");
     // let message = format!("Hello {who}, this is an AWS Lambda HTTP request");
 
-    info!("Request received");
+    debug!("Request received");
 
     // let fastcgi_params = FastCGIParams::default()
     //     .request_method("GET")

@@ -38,4 +38,13 @@ run-php:
   docker run --rm --name php php /bin/sh
 
 run-dev:
-  docker run --rm --volume ./:/mnt/runtime --name runtime-dev --entrypoint /bin/sh runtime-dev -c "cargo lambda watch -a 127.0.0.1 -p 9000"
+  docker run \
+    --rm \
+    --init \
+    --publish 3000:8080 \
+    --volume ./Cargo.toml:/mnt/runtime/Cargo.toml \
+    --volume ./Cargo.lock:/mnt/runtime/Cargo.lock \
+    --volume ./src:/mnt/runtime/src \
+    --volume ./target:/mnt/runtime/target \
+    --name runtime-dev \
+    runtime-dev

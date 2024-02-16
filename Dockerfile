@@ -388,8 +388,6 @@ RUN CFLAGS="-fstack-protector-strong -fpic -fpie -O3 -I${INSTALL_DIR}/include -I
   --enable-filter \
   --enable-shmop \
   --enable-opcache \
-  --enable-intl \
-  --with-iconv \
   --with-zlib \
   --with-gettext
 RUN make -j$(nproc)
@@ -497,16 +495,38 @@ WORKDIR /var/task
 
 FROM setup-build as runtime-dev
 
-ARG MOUNT_DIR=/mnt/runtime
+ENV RUNTIME_DEV_DIR=/mnt/runtime
+ENV RUNTIME_DIR=/var/task
 
-WORKDIR ${MOUNT_DIR}
+WORKDIR ${RUNTIME_DEV_DIR}
+
+# Install PHP
 
 COPY --from=php /opt /opt
 
-# Install dependencies
+# Install Rust
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
 
 ENV PATH=/root/.cargo/bin:${PATH}
 
+RUN cargo install cargo-watch
 RUN cargo install cargo-lambda
+
+# Reduce image size
+
+RUN rm /lambda-entrypoint.sh
+RUN rm /usr/local/bin/aws-lambda-rie
+
+# Set AWS Lambda environment variables
+
+ENV AWS_LAMBDA_FUNCTION_NAME=runtime
+ENV AWS_LAMBDA_FUNCTION_VERSION=1
+ENV AWS_LAMBDA_FUNCTION_MEMORY_SIZE=2048
+ENV AWS_LAMBDA_RUNTIME_API=http://0.0.0.0:8080/.rt
+
+# Setup entrypoint
+
+COPY ./entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT [ "/entrypoint.sh" ]

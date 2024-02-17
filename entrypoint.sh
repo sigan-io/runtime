@@ -19,9 +19,7 @@ exec cargo watch \
   --quiet \
   --ignore "${RUNTIME_DEV_DIR}/target*" \
   --shell \
-  'echo -e "\n \e[32mINFO\e[0m Cheking runtime...\n" && \
-  cargo check --color always && \
-  echo -e "\n \e[32mINFO\e[0m Building runtime...\n" && \
+  'echo -e "\n \e[32mINFO\e[0m Building runtime...\n" && \
   cargo build --color always && \
   echo -e "\n \e[32mINFO\e[0m Starting runtime...\n" && \
   cp ${RUNTIME_DEV_DIR}/target/debug/runtime ${RUNTIME_DIR}/bootstrap && \

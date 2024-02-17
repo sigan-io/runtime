@@ -47,5 +47,6 @@ run-dev:
     --volume "$(pwd)/Cargo.toml:/mnt/runtime/Cargo.toml" \
     --volume "$(pwd)/Cargo.lock:/mnt/runtime/Cargo.lock" \
     --volume "$(pwd)/src:/mnt/runtime/src" \
+    --volume "$(pwd)/wordpress:/mnt/wordpress" \
     --name runtime-dev \
     runtime-dev

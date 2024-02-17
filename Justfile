@@ -38,14 +38,14 @@ run-php:
   docker run --rm --name php php /bin/sh
 
 run-dev:
+  export HOST_PORT=3000 && \
   docker run \
     --rm \
     --init \
-    --env HOST_PORT=3000 \
-    --publish 3000:8080 \
+    --env HOST_PORT=$HOST_PORT \
+    --publish $HOST_PORT:8080 \
     --volume "$(pwd)/Cargo.toml:/mnt/runtime/Cargo.toml" \
     --volume "$(pwd)/Cargo.lock:/mnt/runtime/Cargo.lock" \
     --volume "$(pwd)/src:/mnt/runtime/src" \
-    --volume "$(pwd)/target:/mnt/runtime/target" \
     --name runtime-dev \
     runtime-dev

@@ -519,15 +519,12 @@ RUN rm /lambda-entrypoint.sh
 RUN rm /usr/local/bin/aws-lambda-rie
 RUN rm -rf /root/.cargo/registry
 RUN rm -rf /usr/lib64/python3.9
+RUN rm -rf /usr/lib/python3.9
 RUN rm -rf /usr/lib64/perl5
 RUN rm -rf /usr/share/perl5
 RUN rm -rf /usr/share/cmake
-RUN rm -rf /usr/bin/lto-dump
 RUN rm -rf /usr/bin/ctest
 RUN rm -rf /usr/bin/cmake
-RUN rm -rf /usr/libexec/gcc
-RUN rm -rf /usr/lib/python3.9
-RUN rm -rf /usr/lib/gcc
 
 # Set AWS Lambda environment variables
 

@@ -11,9 +11,10 @@ edition = "2021"
 # and it will keep the alphabetic ordering for you.
 
 [dependencies]
-fastcgi-client     = "0.9.0"
+elegant-departure  = { version = "0.2.1", default-features = false, features = ["tokio"] }
+fastcgi-client     = { version = "0.9.0", default-features = false }
 lambda_http        = { version = "0.9.3", default-features = false, features = ["apigw_http"] }
-serde              = "1.0.196"
+serde              = { version = "1.0.196", default-features = false }
 tokio              = { version = "1.36.0", features = ["macros"] }
 tracing            = { version = "0.1.40", features = ["log"] }
 tracing-subscriber = { version = "0.3.18", default-features = false, features = ["fmt", "ansi"] }

@@ -497,6 +497,7 @@ FROM setup-build as runtime-dev
 
 ENV RUNTIME_DEV_DIR=/mnt/runtime
 ENV RUNTIME_DIR=/var/task
+ENV WORDPRESS_DIR=/mnt/wordpress
 
 WORKDIR ${RUNTIME_DEV_DIR}
 

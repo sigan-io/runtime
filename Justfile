@@ -46,7 +46,8 @@ run-dev:
     --publish $HOST_PORT:8080 \
     --volume "$(pwd)/Cargo.toml:/mnt/runtime/Cargo.toml" \
     --volume "$(pwd)/Cargo.lock:/mnt/runtime/Cargo.lock" \
-    --volume "$(pwd)/src:/mnt/runtime/src" \
+    --volume "$(pwd)/runtime:/mnt/runtime/runtime" \
+    --volume "$(pwd)/fastcgi-client:/mnt/runtime/fastcgi-client" \
     --volume "$(pwd)/wordpress:/mnt/wordpress" \
     --name runtime-dev \
     runtime-dev

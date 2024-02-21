@@ -1,13 +1,7 @@
-use std::{fs, path::Path, process::Command, sync::Arc};
-use tokio::{
-    net::UnixStream,
-    time::{interval, Duration, Instant},
-};
+use std::{fs, path::Path, process::Command};
 use tracing::info;
 
-pub struct PhpCgi {
-    stream: Arc<UnixStream>,
-}
+pub struct PhpCgi {}
 
 impl PhpCgi {
     const COMMAND: &'static str = "php-cgi";
@@ -15,7 +9,7 @@ impl PhpCgi {
 }
 
 impl PhpCgi {
-    pub async fn new() -> Self {
+    pub fn new() -> Self {
         Self::ensure_socket();
 
         let mut process = Command::new(Self::COMMAND)
@@ -24,8 +18,6 @@ impl PhpCgi {
             .expect(&format!("Failed to start {} process", Self::COMMAND));
 
         info!("Started {} process: {}", Self::COMMAND, process.id());
-
-        let stream = Arc::new(Self::connect_to_socket().await);
 
         // Spawns a task to handle graceful shutdown and killing the php-cgi process.
         tokio::spawn(async move {
@@ -40,11 +32,11 @@ impl PhpCgi {
             ));
         });
 
-        Self { stream }
+        Self {}
     }
 
-    pub fn get_stream(&self) -> Arc<UnixStream> {
-        self.stream.clone()
+    pub fn get_socket(&self) -> &'static str {
+        Self::SOCKET
     }
 }
 
@@ -65,28 +57,5 @@ impl PhpCgi {
 
         fs::File::create(socket_path).expect("Failed to create socket");
         info!("Created new socket {:?}", socket_path);
-    }
-
-    async fn connect_to_socket() -> UnixStream {
-        let timeout = Duration::from_secs(5);
-        let mut interval = interval(Duration::from_millis(5));
-        let start_time = Instant::now();
-
-        loop {
-            tokio::select! {
-                _ = interval.tick() => {
-                    info!("Attempting to connect to {}...", Self::COMMAND);
-
-                    if let Ok(stream) = UnixStream::connect(Self::SOCKET).await {
-                        info!("Successfully connected to {}", Self::COMMAND);
-                        return stream;
-                    }
-
-                    if start_time.elapsed() > timeout {
-                        panic!("Failed to connect to {}", Self::COMMAND);
-                    }
-                }
-            }
-        }
     }
 }

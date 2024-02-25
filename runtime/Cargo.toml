@@ -14,8 +14,8 @@ edition = "2021"
 regex-lite         = { version = "0.1.5" }
 elegant-departure  = { version = "0.2.1", default-features = false, features = ["tokio"] }
 fastcgi-client     = { path = "../fastcgi-client", default-features = false }
-lambda_http        = { version = "0.9.3", default-features = false, features = ["apigw_http"] }
 serde              = { version = "1.0.196", default-features = false }
 tokio              = { workspace = true, features = ["macros"] }
 tracing            = { workspace = true, features = ["log"] }
 tracing-subscriber = { workspace = true, features = ["fmt", "ansi"] }
+lambda_http        = { workspace = true }

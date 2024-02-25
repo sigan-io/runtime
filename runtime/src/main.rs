@@ -1,6 +1,7 @@
 mod fast_cgi;
 mod handler;
 mod php_cgi;
+mod context;
 
 use fast_cgi::FastCgiClient;
 use handler::handler;
@@ -12,7 +13,7 @@ use tracing::{info, Level};
 async fn main() {
     // Get environment variables.
 
-    let host_port = std::env::var("HOST_PORT").expect("HOST_PORT must be set");
+    let host_port = std::env::var("HOST_PORT").unwrap_or(3000.to_string());
 
     // Set up tracing.
 

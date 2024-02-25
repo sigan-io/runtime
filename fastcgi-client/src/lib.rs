@@ -23,5 +23,6 @@ mod meta;
 pub mod params;
 pub mod request;
 pub mod response;
+mod lambda;
 
 pub use crate::{client::Client, error::*, params::Params, request::Request, response::Response};

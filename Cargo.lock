@@ -135,6 +135,7 @@ dependencies = [
 name = "fastcgi-client"
 version = "0.9.0"
 dependencies = [
+ "lambda_http",
  "thiserror",
  "tokio",
  "tracing",

@@ -1,8 +1,9 @@
+use crate::context::RuntimeContext;
 use crate::fast_cgi::FastCgiClient;
 use lambda_http::{Body, Error, Request, RequestExt, Response};
 use regex_lite::Regex;
 
-pub async fn handler(req: Request, client: FastCgiClient) -> Result<Response<Body>, Error> {
+pub async fn handler(mut req: Request, client: FastCgiClient) -> Result<Response<Body>, Error> {
     let resp = Response::builder()
         .status(200)
         .header("content-type", "application/json")
@@ -20,6 +21,10 @@ pub async fn handler(req: Request, client: FastCgiClient) -> Result<Response<Bod
     if Regex::new(r"\.(?:crt|ini|htaccess|json|scss)$")?.is_match(path) {
         return access_forbidden();
     }
+
+    let document_root = std::env::var("WORDPRESS_ROOT").unwrap_or("/mnt/wordpress".into());
+
+    let runtime_context = RuntimeContext::new("", document_root.as_str());
 
     let response = client.send("/index.php", req).await;
 

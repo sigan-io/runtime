@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members  = ["runtime", "fastcgi-client"]
+members  = ["runtime", "fastcgi-client", "litespeed-client"]
 
 [workspace.dependencies]
 tokio              = { version = "1.36.0", default-features = false }

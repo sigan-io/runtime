@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 bytes       = { version = "1.5.0", default-features = false }
-lebe        = "0.5.2"
+lebe        = { version = "0.5.2", default-features = false }
 static_init = { version = "1.0.3", default-features = false }
+thiserror   = { version = "1.0.57", default-features = false }
 tokio       = { workspace = true }

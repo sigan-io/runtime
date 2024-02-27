@@ -474,6 +474,7 @@ dependencies = [
  "bytes",
  "lebe",
  "static_init",
+ "thiserror",
  "tokio",
 ]
 

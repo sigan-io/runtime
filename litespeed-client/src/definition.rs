@@ -47,7 +47,7 @@ impl From<PacketType> for u8 {
     }
 }
 
-pub enum KnownHttpHeaders {
+pub enum HttpHeaders {
     Accept,
     AcceptCharset,
     AcceptEncoding,
@@ -73,75 +73,75 @@ pub enum KnownHttpHeaders {
     XForwardedFor,
     Via,
     TransferEncoding,
-    UnknownHeader,
 }
 
-impl KnownHttpHeaders {
-    pub const COUNT: usize = 26;
+impl HttpHeaders {
+    pub const COUNT: usize = 25; // TransferEncoding + 1
 }
 
-impl From<u8> for KnownHttpHeaders {
-    fn from(value: u8) -> Self {
+impl TryFrom<u8> for HttpHeaders {
+    type Error = HeaderError;
+
+    fn try_from(value: u8) -> Result<Self, HeaderError> {
         match value {
-            0 => Self::Accept,
-            1 => Self::AcceptCharset,
-            2 => Self::AcceptEncoding,
-            3 => Self::AcceptLanguage,
-            4 => Self::Authorization,
-            5 => Self::Connection,
-            6 => Self::ContentType,
-            7 => Self::ContentLength,
-            8 => Self::Cookie,
-            9 => Self::Cookie2,
-            10 => Self::Host,
-            11 => Self::Pragma,
-            12 => Self::Referer,
-            13 => Self::UserAgent,
-            14 => Self::CacheControl,
-            15 => Self::IfModifiedSince,
-            16 => Self::IfMatch,
-            17 => Self::IfNoneMatch,
-            18 => Self::IfRange,
-            19 => Self::IfUnmodifiedSince,
-            20 => Self::KeepAlive,
-            21 => Self::Range,
-            22 => Self::XForwardedFor,
-            23 => Self::Via,
-            24 => Self::TransferEncoding,
-            _ => Self::UnknownHeader,
+            0 => Ok(Self::Accept),
+            1 => Ok(Self::AcceptCharset),
+            2 => Ok(Self::AcceptEncoding),
+            3 => Ok(Self::AcceptLanguage),
+            4 => Ok(Self::Authorization),
+            5 => Ok(Self::Connection),
+            6 => Ok(Self::ContentType),
+            7 => Ok(Self::ContentLength),
+            8 => Ok(Self::Cookie),
+            9 => Ok(Self::Cookie2),
+            10 => Ok(Self::Host),
+            11 => Ok(Self::Pragma),
+            12 => Ok(Self::Referer),
+            13 => Ok(Self::UserAgent),
+            14 => Ok(Self::CacheControl),
+            15 => Ok(Self::IfModifiedSince),
+            16 => Ok(Self::IfMatch),
+            17 => Ok(Self::IfNoneMatch),
+            18 => Ok(Self::IfRange),
+            19 => Ok(Self::IfUnmodifiedSince),
+            20 => Ok(Self::KeepAlive),
+            21 => Ok(Self::Range),
+            22 => Ok(Self::XForwardedFor),
+            23 => Ok(Self::Via),
+            24 => Ok(Self::TransferEncoding),
+            _ => Err(HeaderError::UnknownHeader),
         }
     }
 }
 
-impl From<KnownHttpHeaders> for u8 {
-    fn from(value: KnownHttpHeaders) -> Self {
+impl From<HttpHeaders> for u8 {
+    fn from(value: HttpHeaders) -> Self {
         match value {
-            KnownHttpHeaders::Accept => 0,
-            KnownHttpHeaders::AcceptCharset => 1,
-            KnownHttpHeaders::AcceptEncoding => 2,
-            KnownHttpHeaders::AcceptLanguage => 3,
-            KnownHttpHeaders::Authorization => 4,
-            KnownHttpHeaders::Connection => 5,
-            KnownHttpHeaders::ContentType => 6,
-            KnownHttpHeaders::ContentLength => 7,
-            KnownHttpHeaders::Cookie => 8,
-            KnownHttpHeaders::Cookie2 => 9,
-            KnownHttpHeaders::Host => 10,
-            KnownHttpHeaders::Pragma => 11,
-            KnownHttpHeaders::Referer => 12,
-            KnownHttpHeaders::UserAgent => 13,
-            KnownHttpHeaders::CacheControl => 14,
-            KnownHttpHeaders::IfModifiedSince => 15,
-            KnownHttpHeaders::IfMatch => 16,
-            KnownHttpHeaders::IfNoneMatch => 17,
-            KnownHttpHeaders::IfRange => 18,
-            KnownHttpHeaders::IfUnmodifiedSince => 19,
-            KnownHttpHeaders::KeepAlive => 20,
-            KnownHttpHeaders::Range => 21,
-            KnownHttpHeaders::XForwardedFor => 22,
-            KnownHttpHeaders::Via => 23,
-            KnownHttpHeaders::TransferEncoding => 24,
-            KnownHttpHeaders::UnknownHeader => 25,
+            HttpHeaders::Accept => 0,
+            HttpHeaders::AcceptCharset => 1,
+            HttpHeaders::AcceptEncoding => 2,
+            HttpHeaders::AcceptLanguage => 3,
+            HttpHeaders::Authorization => 4,
+            HttpHeaders::Connection => 5,
+            HttpHeaders::ContentType => 6,
+            HttpHeaders::ContentLength => 7,
+            HttpHeaders::Cookie => 8,
+            HttpHeaders::Cookie2 => 9,
+            HttpHeaders::Host => 10,
+            HttpHeaders::Pragma => 11,
+            HttpHeaders::Referer => 12,
+            HttpHeaders::UserAgent => 13,
+            HttpHeaders::CacheControl => 14,
+            HttpHeaders::IfModifiedSince => 15,
+            HttpHeaders::IfMatch => 16,
+            HttpHeaders::IfNoneMatch => 17,
+            HttpHeaders::IfRange => 18,
+            HttpHeaders::IfUnmodifiedSince => 19,
+            HttpHeaders::KeepAlive => 20,
+            HttpHeaders::Range => 21,
+            HttpHeaders::XForwardedFor => 22,
+            HttpHeaders::Via => 23,
+            HttpHeaders::TransferEncoding => 24,
         }
     }
 }
@@ -211,8 +211,8 @@ pub struct RequestHeader {
 }
 
 pub struct HttpHeaderIndex {
-    header_length: [u16; KnownHttpHeaders::COUNT],
-    header_offset: [i32; KnownHttpHeaders::COUNT],
+    header_length: [u16; HttpHeaders::COUNT],
+    header_offset: [i32; HttpHeaders::COUNT],
 }
 
 pub struct HeaderOffset {
@@ -224,7 +224,7 @@ pub struct HeaderOffset {
 
 pub struct ResponseInfo {
     headers_count: u32,
-    tatus: u32,
+    status: u32,
 }
 
 pub struct ResponseHeader {

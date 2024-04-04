@@ -48,6 +48,7 @@ run-dev:
     --volume "$(pwd)/Cargo.lock:/mnt/runtime/Cargo.lock" \
     --volume "$(pwd)/runtime:/mnt/runtime/runtime" \
     --volume "$(pwd)/fastcgi-client:/mnt/runtime/fastcgi-client" \
+    --volume "$(pwd)/litespeed-client:/mnt/runtime/litespeed-client" \
     --volume "$(pwd)/wordpress:/mnt/wordpress" \
     --name runtime-dev \
     runtime-dev

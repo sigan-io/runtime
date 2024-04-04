@@ -713,6 +713,7 @@ dependencies = [
  "elegant-departure",
  "fastcgi-client",
  "lambda_http",
+ "litespeed-client",
  "regex-lite",
  "serde",
  "tokio",

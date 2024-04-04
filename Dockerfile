@@ -369,6 +369,7 @@ RUN CFLAGS="-fstack-protector-strong -fpic -fpie -O3 -I${INSTALL_DIR}/include -I
   --enable-fpm \
   --enable-cgi \
   --enable-embed \
+  --enable-litespeed \
   # Required by WP
   --with-mysqli \
   # Highly Recommended by WP
@@ -493,17 +494,13 @@ WORKDIR /var/task
 
 ### Runtime Development ###
 
-FROM setup-build as runtime-dev
+FROM build-php as runtime-dev
 
 ENV RUNTIME_DEV_DIR=/mnt/runtime
 ENV RUNTIME_DIR=/var/task
 ENV WORDPRESS_DIR=/mnt/wordpress
 
 WORKDIR ${RUNTIME_DEV_DIR}
-
-# Install PHP
-
-COPY --from=php /opt /opt
 
 # Install Rust
 
@@ -513,6 +510,11 @@ ENV PATH=/root/.cargo/bin:${PATH}
 
 RUN cargo install cargo-watch
 RUN cargo install cargo-lambda
+
+# Install utilities
+
+RUN dnf install -y lsof
+RUN dnf install -y socat
 
 # Reduce image size
 

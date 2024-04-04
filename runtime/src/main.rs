@@ -1,16 +1,23 @@
-mod fast_cgi;
-mod handler;
-mod php_cgi;
-mod context;
+// mod fast_cgi;
+// mod handler;
+// mod php_cgi;
+// mod context;
 
-use fast_cgi::FastCgiClient;
-use handler::handler;
+// use fast_cgi::FastCgiClient;
+// use handler::handler;
 use lambda_http::{run, service_fn};
-use php_cgi::PhpCgi;
-use tracing::{info, Level};
+// use php_cgi::PhpCgi;
+use std::fs;
+use std::io::{BufRead, BufReader};
+use std::path::Path;
+use std::process::{Command, Stdio};
+use std::time::Duration;
+use tokio::net::UnixStream;
+use tokio::time::{interval, Instant};
+use tracing::{error, info, Level};
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Get environment variables.
 
     let host_port = std::env::var("HOST_PORT").unwrap_or(3000.to_string());
@@ -24,23 +31,122 @@ async fn main() {
         .with_ansi(true)
         .init();
 
-    // Start php-cgi process.
+    // Create socket file.
 
-    let socket = PhpCgi::new().get_socket();
+    info!("Creating a socket...");
+    let socket_path = Path::new("/tmp/lsphp.sock");
 
-    // Initialize FastCGI client.
+    if socket_path.exists() {
+        info!("Socket already exist");
+        fs::remove_file(socket_path).expect("Failed to remove socket");
+        info!("Existing socket removed");
+    }
 
-    let client = FastCgiClient::new(socket).await;
+    if let Some(parent) = socket_path.parent() {
+        fs::create_dir_all(parent).expect("Failed to create socket parent path");
+    }
+
+    fs::File::create(socket_path).expect("Failed to create socket");
+    info!("Created new socket {:?}", socket_path);
+
+    // Start PHP LiteSpeed process.
+
+    let command = "lsphp";
+
+    let mut process = Command::new(command)
+        .arg("-b")
+        .arg(socket_path.to_str().unwrap())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect(&format!("Failed to start {} process", command));
+
+    info!("Started {} process with id {}", command, process.id());
+
+    // Log lsphp process stdout.
+
+    let process_stdout = process.stdout.take().expect("Failed to take stdout.");
+
+    tokio::spawn(async move {
+        let reader = BufReader::new(process_stdout);
+
+        for line in reader.lines() {
+            if let Ok(line) = line {
+                info!("lsphp: {}", line);
+            }
+        }
+    });
+
+    // Log lsphp process stderr.
+
+    let process_stderr = process.stderr.take().expect("Failed to take stderr.");
+
+    tokio::spawn(async move {
+        let reader = BufReader::new(process_stderr);
+
+        for line in reader.lines() {
+            if let Ok(line) = line {
+                error!("lsphp: {}", line);
+            }
+        }
+    });
+
+    // Spawns a task to handle graceful shutdown and kill the lsphp process.
+
+    tokio::spawn(async move {
+        elegant_departure::get_shutdown_guard().wait().await;
+
+        info!("Shutting down {} process with id {}", command, process.id());
+
+        process.kill().expect(&format!(
+            "Failed to kill {} process with id {}",
+            command,
+            process.id()
+        ));
+    });
+
+    // Connect client to PHP LiteSpeed process.
+
+    let socket = "/tmp/lsphp.sock";
+    let timeout = Duration::from_secs(5);
+    let mut interval = interval(Duration::from_millis(10));
+    let start_time = Instant::now();
+
+    let stream = loop {
+        tokio::select! {
+            _ = interval.tick() => {
+                info!("Attempting to connect to {}...", socket);
+
+                if let Ok(stream) = UnixStream::connect(socket).await {
+                    info!("Successfully connected to {}", socket);
+                    break stream;
+                }
+
+                if start_time.elapsed() > timeout {
+                    panic!("Failed to connect to {}", socket);
+                }
+            }
+        }
+    };
+
+    let connection = litespeed_client::connection::Connection::new(stream);
 
     // Start server.
 
-    let server = run(service_fn(move |req| handler(req, client.clone())));
+    let server = async {
+        let _ = run(service_fn(|_| async {
+            Result::<&str, std::convert::Infallible>::Ok("👋 world!")
+        }))
+        .await;
+    };
 
-    tokio::spawn(server);
+    let shutdown_listener = elegant_departure::tokio::depart()
+        .on_termination()
+        .on_completion(server);
 
     info!("Runtime listening to http://localhost:{host_port}\n");
 
-    elegant_departure::tokio::depart().on_termination().await
+    Ok(shutdown_listener.await)
 }
 
 // async fn function_handler(event: Request) -> Result<Response<Body>, Error> {

@@ -14,7 +14,7 @@ use std::process::{Command, Stdio};
 use std::time::Duration;
 use tokio::net::UnixStream;
 use tokio::time::{interval, Instant};
-use tracing::{error, info, Level};
+use tracing::{debug, error, info, Level};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -133,16 +133,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     // Start server.
 
-    let server = async {
-        let _ = run(service_fn(|_| async {
+    let server = run(service_fn(|req| {
+        let mut connection = connection.clone();
+
+        println!("request {:#?}", req);
+
+        async move {
+            if let Err(e) = connection.send(b"hi").await {
+                panic!("Error sending data: {:?}", e);
+            }
+
+            let response = match connection.receive().await {
+                Ok(data) => data,
+                Err(e) => {
+                    panic!("Error receiving data: {:?}", e);
+                }
+            };
+            debug!("response {:#?}", response);
+
             Result::<&str, std::convert::Infallible>::Ok("👋 world!")
-        }))
-        .await;
-    };
+        }
+    }));
 
     let shutdown_listener = elegant_departure::tokio::depart()
         .on_termination()
-        .on_completion(server);
+        .on_completion(async {
+            let _ = server.await;
+        });
 
     info!("Runtime listening to http://localhost:{host_port}\n");
 

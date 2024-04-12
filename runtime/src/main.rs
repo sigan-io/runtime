@@ -7,13 +7,11 @@
 // use handler::handler;
 use lambda_http::{run, service_fn};
 // use php_cgi::PhpCgi;
+use litespeed_client::{Client, Request};
 use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::time::Duration;
-use tokio::net::UnixStream;
-use tokio::time::{interval, Instant};
 use tracing::{debug, error, info, Level};
 
 #[tokio::main]
@@ -108,42 +106,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Connect client to PHP LiteSpeed process.
 
     let socket = "/tmp/lsphp.sock";
-    let timeout = Duration::from_secs(5);
-    let mut interval = interval(Duration::from_millis(10));
-    let start_time = Instant::now();
-
-    let stream = loop {
-        tokio::select! {
-            _ = interval.tick() => {
-                info!("Attempting to connect to {}...", socket);
-
-                if let Ok(stream) = UnixStream::connect(socket).await {
-                    info!("Successfully connected to {}", socket);
-                    break stream;
-                }
-
-                if start_time.elapsed() > timeout {
-                    panic!("Failed to connect to {}", socket);
-                }
-            }
-        }
-    };
-
-    let connection = litespeed_client::connection::Connection::new(stream);
+    let client = Client::new(socket).await;
 
     // Start server.
 
     let server = run(service_fn(|req| {
-        let mut connection = connection.clone();
+        let mut client = client.clone();
 
         println!("request {:#?}", req);
 
         async move {
-            if let Err(e) = connection.send(b"hi").await {
+            let request = Request::new().into_bytes();
+            if let Err(e) = client.send(request).await {
                 panic!("Error sending data: {:?}", e);
             }
 
-            let response = match connection.receive().await {
+            let response = match client.receive().await {
                 Ok(data) => data,
                 Err(e) => {
                     panic!("Error receiving data: {:?}", e);

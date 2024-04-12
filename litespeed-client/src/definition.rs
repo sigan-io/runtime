@@ -1,52 +1,26 @@
-use crate::error::HeaderError;
+use crate::errors::HttpHeaderError;
+use bytes::{BufMut, Bytes, BytesMut};
+use std::mem::size_of_val;
 
-pub enum PacketType {
-    BeginRequest,
-    AbortRequest,
-    ResponseHeader,
-    ResponseStream,
-    ResponseEnd,
-    StderrStream,
-    RequestReceived,
-    ConnectionClose,
-    InternalError,
-    UnknownType,
+pub struct EnvVariable<'a> {
+    name_length: u16,
+    value_length: u16,
+    name: &'a str,
+    value: &'a str,
 }
 
-impl From<u8> for PacketType {
-    fn from(value: u8) -> Self {
-        match value {
-            1 => Self::BeginRequest,
-            2 => Self::AbortRequest,
-            3 => Self::ResponseHeader,
-            4 => Self::ResponseStream,
-            5 => Self::ResponseEnd,
-            6 => Self::StderrStream,
-            7 => Self::RequestReceived,
-            8 => Self::ConnectionClose,
-            9 => Self::InternalError,
-            _ => Self::UnknownType,
+impl<'a> EnvVariable<'a> {
+    pub fn new(name: &'a str, value: &'a str) -> Self {
+        Self {
+            name_length: name.len() as u16,
+            value_length: value.len() as u16,
+            name,
+            value,
         }
     }
 }
 
-impl From<PacketType> for u8 {
-    fn from(value: PacketType) -> Self {
-        match value {
-            PacketType::BeginRequest => 1,
-            PacketType::AbortRequest => 2,
-            PacketType::ResponseHeader => 3,
-            PacketType::ResponseStream => 4,
-            PacketType::ResponseEnd => 5,
-            PacketType::StderrStream => 6,
-            PacketType::RequestReceived => 7,
-            PacketType::ConnectionClose => 8,
-            PacketType::InternalError => 9,
-            PacketType::UnknownType => 10,
-        }
-    }
-}
-
+#[derive(Clone, Debug)]
 pub enum HttpHeaders {
     Accept,
     AcceptCharset,
@@ -76,13 +50,13 @@ pub enum HttpHeaders {
 }
 
 impl HttpHeaders {
-    pub const COUNT: usize = 25; // TransferEncoding + 1
+    pub const COUNT: usize = 25; // Total known HTTP headers (enum length).
 }
 
 impl TryFrom<u8> for HttpHeaders {
-    type Error = HeaderError;
+    type Error = HttpHeaderError;
 
-    fn try_from(value: u8) -> Result<Self, HeaderError> {
+    fn try_from(value: u8) -> Result<Self, HttpHeaderError> {
         match value {
             0 => Ok(Self::Accept),
             1 => Ok(Self::AcceptCharset),
@@ -109,7 +83,7 @@ impl TryFrom<u8> for HttpHeaders {
             22 => Ok(Self::XForwardedFor),
             23 => Ok(Self::Via),
             24 => Ok(Self::TransferEncoding),
-            _ => Err(HeaderError::UnknownHeader),
+            _ => Err(HttpHeaderError::UnknownHeader),
         }
     }
 }
@@ -146,88 +120,24 @@ impl From<HttpHeaders> for u8 {
     }
 }
 
-pub enum Endianness {
-    LittleEndian = 0,
-    BigEndian = 1,
-}
-
-impl TryFrom<u8> for Endianness {
-    type Error = HeaderError;
-
-    fn try_from(value: u8) -> Result<Self, HeaderError> {
-        match value {
-            0 => Ok(Self::LittleEndian),
-            1 => Ok(Self::BigEndian),
-            _ => Err(HeaderError::Endianness),
-        }
-    }
-}
-
-impl From<Endianness> for u8 {
-    fn from(value: Endianness) -> Self {
-        match value {
-            Endianness::LittleEndian => 0,
-            Endianness::BigEndian => 1,
-        }
-    }
-}
-
-pub enum PacketLength {
-    Length(i32),
-    Bytes([u8; 4]),
-}
-
-pub struct PacketHeader {
-    version_b0: u8,
-    version_b1: u8,
-    packet_type: PacketType,
-    endianness: Endianness,
-    packet_length: PacketLength,
-}
-
-impl PacketHeader {
-    fn get_packet_type(&self) -> &PacketType {
-        &self.packet_type
-    }
-    fn get_endianness(&self) -> &Endianness {
-        &self.endianness
-    }
-    fn get_packet_length(&self) -> &PacketLength {
-        &self.packet_length
-    }
-}
-
-pub struct RequestHeader {
-    packet_header: PacketHeader,
-    http_header_length: u32,
-    request_body_length: u32,
-    script_filename_offset: u32,
-    script_name_offset: u32,
-    query_string_offset: u32,
-    request_method_offset: u32,
-    unknown_headers_count: u32,
-    env_variables_count: u32,
-    special_env_variables_count: u32,
-}
-
-pub struct HttpHeaderIndex {
+pub struct KnownHttpHeaderIndex {
     header_length: [u16; HttpHeaders::COUNT],
-    header_offset: [i32; HttpHeaders::COUNT],
+    header_offset: [u32; HttpHeaders::COUNT],
 }
 
-pub struct HeaderOffset {
+pub struct UnknownHeaderOffset {
     name_offset: u32,
     name_length: u32,
     value_offset: u32,
     value_length: u32,
 }
 
-pub struct ResponseInfo {
-    headers_count: u32,
-    status: u32,
-}
+// pub struct ResponseInfo {
+//     headers_count: u32,
+//     status: u32,
+// }
 
-pub struct ResponseHeader {
-    packet_header: PacketHeader,
-    response_info: ResponseInfo,
-}
+// pub struct ResponseHeader {
+//     packet_header: PacketHeader,
+//     response_info: ResponseInfo,
+// }

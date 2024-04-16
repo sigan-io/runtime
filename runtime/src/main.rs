@@ -116,8 +116,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         println!("request {:#?}", req);
 
         async move {
-            let request = Request::new().into_bytes();
-            if let Err(e) = client.send(request).await {
+            let request = Request::new()
+                .document_root("/mnt/wordpress")
+                .script_filename("index.php")
+                .script_name("index.php")
+                .query_string("name=world")
+                .request_method("GET");
+
+            if let Err(e) = client.send(request.into()).await {
                 panic!("Error sending data: {:?}", e);
             }
 

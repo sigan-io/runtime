@@ -2,6 +2,46 @@ use crate::errors::HttpHeaderError;
 use bytes::{BufMut, Bytes, BytesMut};
 use std::mem::size_of_val;
 
+#[derive(Clone, Debug)]
+pub struct EnvVariables<'a>(Vec<EnvVariable<'a>>);
+
+impl<'a> EnvVariables<'a> {
+    pub fn new(capacity: usize) -> Self {
+        Self(Vec::with_capacity(capacity))
+    }
+
+    pub fn add(&mut self, name: &'a str, value: &'a str) -> usize {
+        let offset = self.0.len();
+        self.0.push(EnvVariable::new(name, value));
+        offset
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.iter().map(|env_variable| env_variable.len()).sum()
+    }
+}
+
+impl<'a> Default for EnvVariables<'a> {
+    fn default() -> Self {
+        Self::new(0)
+    }
+}
+
+impl<'a> Into<Bytes> for EnvVariables<'a> {
+    fn into(self) -> Bytes {
+        let mut buffer = BytesMut::with_capacity(self.len() + 4); // +4 bytes for null terminator.
+
+        for env_variable in self.0 {
+            buffer.put::<Bytes>(env_variable.into());
+        }
+
+        buffer.put_bytes(0, 4); // Null terminator required by LiteSpeed protocol.
+
+        buffer.into()
+    }
+}
+
+#[derive(Clone, Debug, Copy)]
 pub struct EnvVariable<'a> {
     name_length: u16,
     value_length: u16,
@@ -12,11 +52,33 @@ pub struct EnvVariable<'a> {
 impl<'a> EnvVariable<'a> {
     pub fn new(name: &'a str, value: &'a str) -> Self {
         Self {
-            name_length: name.len() as u16,
-            value_length: value.len() as u16,
+            name_length: (name.len() + 1) as u16, // +1 for null terminator.
+            value_length: (value.len() + 1) as u16, // +1 for null terminator.
             name,
             value,
         }
+    }
+
+    pub fn len(&self) -> usize {
+        size_of_val(&self.name_length)
+            + size_of_val(&self.value_length)
+            + size_of_val(&self.name)
+            + size_of_val(&self.value)
+    }
+}
+
+impl<'a> Into<Bytes> for EnvVariable<'a> {
+    fn into(self) -> Bytes {
+        let mut buffer = BytesMut::with_capacity(self.len());
+
+        buffer.put_u16(self.name_length);
+        buffer.put_u16(self.value_length);
+        buffer.extend_from_slice(self.name.as_bytes());
+        buffer.put_u8(0); // Null terminator required by LiteSpeed protocol.
+        buffer.extend_from_slice(self.value.as_bytes());
+        buffer.put_u8(0); // Null terminator required by LiteSpeed protocol.
+
+        buffer.into()
     }
 }
 
@@ -50,7 +112,9 @@ pub enum HttpHeaders {
 }
 
 impl HttpHeaders {
-    pub const COUNT: usize = 25; // Total known HTTP headers (enum length).
+    // Total HTTP headers.
+    // Will move to std::mem::variants_count once it is stable.
+    pub const COUNT: usize = 25;
 }
 
 impl TryFrom<u8> for HttpHeaders {
@@ -120,17 +184,17 @@ impl From<HttpHeaders> for u8 {
     }
 }
 
-pub struct KnownHttpHeaderIndex {
-    header_length: [u16; HttpHeaders::COUNT],
-    header_offset: [u32; HttpHeaders::COUNT],
-}
+// pub struct KnownHttpHeaderIndex {
+//     header_length: [u16; HttpHeaders::COUNT],
+//     header_offset: [u32; HttpHeaders::COUNT],
+// }
 
-pub struct UnknownHeaderOffset {
-    name_offset: u32,
-    name_length: u32,
-    value_offset: u32,
-    value_length: u32,
-}
+// pub struct UnknownHeaderOffset {
+//     name_offset: u32,
+//     name_length: u32,
+//     value_offset: u32,
+//     value_length: u32,
+// }
 
 // pub struct ResponseInfo {
 //     headers_count: u32,

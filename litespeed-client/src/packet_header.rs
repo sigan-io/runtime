@@ -1,8 +1,9 @@
 use crate::{errors::PacketHeaderError, statics::ENDIAN};
 use bytes::{BufMut, Bytes, BytesMut};
-use std::mem::size_of_val;
+use std::mem::size_of;
 
 #[derive(Clone, Debug, Copy)]
+#[repr(u8)]
 pub enum PacketType {
     BeginRequest,
     AbortRequest,
@@ -18,7 +19,7 @@ pub enum PacketType {
 impl TryFrom<u8> for PacketType {
     type Error = PacketHeaderError;
 
-    fn try_from(value: u8) -> Result<Self, PacketHeaderError> {
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             1 => Ok(Self::BeginRequest),
             2 => Ok(Self::AbortRequest),
@@ -29,7 +30,7 @@ impl TryFrom<u8> for PacketType {
             7 => Ok(Self::RequestReceived),
             8 => Ok(Self::ConnectionClose),
             9 => Ok(Self::InternalError),
-            _ => Err(PacketHeaderError::UnknownPacketType),
+            _ => Err(Self::Error::UnknownPacketType),
         }
     }
 }
@@ -51,6 +52,7 @@ impl From<PacketType> for u8 {
 }
 
 #[derive(Clone, Debug, Copy)]
+#[repr(u8)]
 pub enum Endianness {
     LittleEndian,
     BigEndian,
@@ -129,11 +131,7 @@ impl PacketHeader {
     }
 
     pub fn len(&self) -> usize {
-        size_of_val(&self.version_b0)
-            + size_of_val(&self.version_b1)
-            + size_of_val(&self.packet_type)
-            + size_of_val(&self.endianness)
-            + size_of_val(&self.packet_length)
+        size_of::<u8>() * 4 + size_of::<u32>()
     }
 }
 

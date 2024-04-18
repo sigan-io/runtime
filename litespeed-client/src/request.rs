@@ -1,12 +1,12 @@
-use crate::{EnvVariables, PacketHeader, RequestHeader};
-use bytes::{BufMut, Bytes, BytesMut};
-use std::collections::HashMap;
+use crate::{EnvVariables, PacketHeader, RequestHeader, RequiredEnvVariables};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 #[derive(Clone, Debug)]
 pub struct Request<'a> {
     packet_header: PacketHeader,
     request_header: RequestHeader,
     special_env_variables: EnvVariables<'a>,
+    required_env_variables: RequiredEnvVariables<'a>,
     general_env_variables: EnvVariables<'a>,
 }
 
@@ -16,6 +16,7 @@ impl<'a> Request<'a> {
             packet_header: PacketHeader::default(),
             request_header: RequestHeader::default(),
             special_env_variables: EnvVariables::default(),
+            required_env_variables: RequiredEnvVariables::default(),
             general_env_variables: EnvVariables::default(),
         }
     }
@@ -87,60 +88,109 @@ impl<'a> Request<'a> {
     }
 
     pub fn script_filename(mut self, value: &'a str) -> Self {
-        let index = self.general_env_variables.add("SCRIPT_FILENAME", value);
-        self.request_header.script_filename_offset(index as u32);
+        self.required_env_variables.script_filename(value);
         self
     }
 
     pub fn script_name(mut self, value: &'a str) -> Self {
-        let index = self.general_env_variables.add("SCRIPT_NAME", value);
-        self.request_header.script_name_offset(index as u32);
+        self.required_env_variables.script_name(value);
         self
     }
 
     pub fn query_string(mut self, value: &'a str) -> Self {
-        let index = self.general_env_variables.add("QUERY_STRING", value);
-        self.request_header.query_string_offset(index as u32);
+        self.required_env_variables.query_string(value);
         self
     }
 
     pub fn request_method(mut self, value: &'a str) -> Self {
-        let index = self.general_env_variables.add("REQUEST_METHOD", value);
-        self.request_header.request_method_offset(index as u32);
+        self.required_env_variables.request_method(value);
         self
     }
 
-    pub fn add_env_variable(mut self, name: &'a str, value: &'a str) -> Self {
-        self.general_env_variables.add(name, value);
-        self
+    pub fn len(&self) -> usize {
+        let length = self.packet_header.len()
+            + self.request_header.len()
+            + self.special_env_variables.len()
+            + self.general_env_variables.len();
+
+        let padding = (8 - (length % 8)) % 8;
+
+        length + padding
     }
 
-    pub fn add_env_variables(mut self, env_variables: HashMap<&'a str, &'a str>) -> Self {
-        for (name, value) in env_variables {
-            self.general_env_variables.add(name, value);
-        }
-        self
+    pub fn into_bytes(self) -> Bytes {
+        self.into()
     }
 }
 
 impl<'a> Into<Bytes> for Request<'a> {
-    fn into(self) -> Bytes {
-        let mut buffer = BytesMut::new();
+    fn into(mut self) -> Bytes {
+        let mut packet_header_buffer = BytesMut::with_capacity(self.packet_header.len());
+        let mut request_header_buffer = BytesMut::with_capacity(self.request_header.len());
 
-        // Request header
-        buffer.put::<Bytes>(self.packet_header.into());
-        buffer.put::<Bytes>(self.request_header.into());
+        let mut buffer = BytesMut::with_capacity(
+            self.special_env_variables.len()
+                + self.required_env_variables.len()
+                + self.general_env_variables.len(),
+        );
 
-        // Special and general environment variables
-        buffer.put::<Bytes>(self.special_env_variables.into());
-        buffer.put::<Bytes>(self.general_env_variables.into());
+        // Update the packet length
+        self.packet_header.packet_length(self.len() as u32);
+
+        // Update the number of environment variables
+        self.request_header.env_variables_count(
+            (self.required_env_variables.count() + self.general_env_variables.count()) as u32,
+        );
+
+        // Update script filename offset and append to buffer
+        if let Some(script_filename) = self.required_env_variables.get_script_filename() {
+            self.request_header.script_filename_offset(
+                (self.packet_header.len() + self.request_header.len() + buffer.len()) as u32,
+            );
+            buffer.put::<Bytes>(script_filename.into());
+        }
+
+        // Update script name offset and append to buffer
+        if let Some(script_name) = self.required_env_variables.get_script_name() {
+            self.request_header.script_name_offset(
+                (self.packet_header.len() + self.request_header.len() + buffer.len()) as u32,
+            );
+            buffer.put::<Bytes>(script_name.into());
+        }
+
+        // Update query string offset and append to buffer
+        if let Some(query_string) = self.required_env_variables.get_query_string() {
+            self.request_header.query_string_offset(
+                (self.packet_header.len() + self.request_header.len() + buffer.len()) as u32,
+            );
+            buffer.put::<Bytes>(query_string.into());
+        }
+
+        // Update request method offset and append to buffer
+        if let Some(request_method) = self.required_env_variables.get_request_method() {
+            self.request_header.request_method_offset(
+                (self.packet_header.len() + self.request_header.len() + buffer.len()) as u32,
+            );
+            buffer.put::<Bytes>(request_method.into());
+        }
 
         // Add padding
-        let padding = (8 - (buffer.len() % 8)) % 8;
+        let buffer_length = self.packet_header.len() + self.request_header.len() + buffer.len();
+        let padding = (8 - (buffer_length % 8)) % 8;
         buffer.put_bytes(0, padding);
+
+        // Append packet header to buffer
+        packet_header_buffer.put::<Bytes>(self.packet_header.into());
+
+        // Append request header to buffer
+        request_header_buffer.put::<Bytes>(self.request_header.into());
+
+        let mut chain = packet_header_buffer
+            .chain(request_header_buffer)
+            .chain(buffer);
 
         // HTTP headers
 
-        buffer.into()
+        chain.copy_to_bytes(self.len())
     }
 }

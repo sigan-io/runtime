@@ -50,5 +50,6 @@ run-dev:
     --volume "$(pwd)/fastcgi-client:/mnt/runtime/fastcgi-client" \
     --volume "$(pwd)/litespeed-client:/mnt/runtime/litespeed-client" \
     --volume "$(pwd)/wordpress:/mnt/wordpress" \
+    --volume "$(pwd)/config:/mnt/config" \
     --name runtime-dev \
     runtime-dev

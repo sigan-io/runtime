@@ -54,6 +54,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut process = Command::new(command)
         .arg("-b")
         .arg(socket_path.to_str().unwrap())
+        .arg("-c")
+        .arg("/mnt/config/php.ini")
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()

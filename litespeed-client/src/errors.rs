@@ -13,3 +13,9 @@ pub enum HttpHeaderError {
     #[error("The header provided is unknown.")]
     UnknownHeader,
 }
+
+#[derive(Debug, Error)]
+pub enum CommonEnvVariableError{
+    #[error("The environment variable provided is unknown.")]
+    UnknownEnvVariable,
+}

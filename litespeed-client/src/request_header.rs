@@ -1,5 +1,5 @@
 use bytes::{BufMut, Bytes, BytesMut};
-use std::mem::size_of_val;
+use std::mem::size_of;
 
 #[derive(Clone, Debug, Copy)]
 pub struct RequestHeader {
@@ -44,9 +44,17 @@ impl RequestHeader {
         self
     }
 
+    pub fn get_script_filename_offset(&self) -> u32 {
+        self.script_filename_offset
+    }
+
     pub fn script_name_offset(&mut self, offset: u32) -> &Self {
         self.script_name_offset = offset;
         self
+    }
+
+    pub fn get_script_name_offset(&self) -> u32 {
+        self.script_name_offset
     }
 
     pub fn query_string_offset(&mut self, offset: u32) -> &Self {
@@ -54,9 +62,17 @@ impl RequestHeader {
         self
     }
 
+    pub fn get_query_string_offset(&self) -> u32 {
+        self.query_string_offset
+    }
+
     pub fn request_method_offset(&mut self, offset: u32) -> &Self {
         self.request_method_offset = offset;
         self
+    }
+
+    pub fn get_request_method_offset(&self) -> u32 {
+        self.request_method_offset
     }
 
     pub fn unknown_headers_count(&mut self, count: u32) -> &Self {
@@ -75,15 +91,11 @@ impl RequestHeader {
     }
 
     pub fn len(&self) -> usize {
-        size_of_val(&self.http_header_length)
-            + size_of_val(&self.request_body_length)
-            + size_of_val(&self.script_filename_offset)
-            + size_of_val(&self.script_name_offset)
-            + size_of_val(&self.query_string_offset)
-            + size_of_val(&self.request_method_offset)
-            + size_of_val(&self.unknown_headers_count)
-            + size_of_val(&self.env_variables_count)
-            + size_of_val(&self.special_env_variables_count)
+        size_of::<u32>() * 9
+    }
+
+    pub fn into_bytes(self) -> Bytes {
+        self.into()
     }
 }
 

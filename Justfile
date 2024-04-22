@@ -22,6 +22,9 @@ build-libraries:
 build-build-php:
   docker build --target build-php --tag build-php .
 
+build-bindings-image:
+  docker build --target build-bindings --tag build-bindings .
+
 build-php:
   docker build --target php --tag php .
 
@@ -47,9 +50,20 @@ run-dev:
     --volume "$(pwd)/Cargo.toml:/mnt/runtime/Cargo.toml" \
     --volume "$(pwd)/Cargo.lock:/mnt/runtime/Cargo.lock" \
     --volume "$(pwd)/runtime:/mnt/runtime/runtime" \
-    --volume "$(pwd)/fastcgi-client:/mnt/runtime/fastcgi-client" \
+    --volume "$(pwd)/php-lambda:/mnt/runtime/php-lambda" \
+    --volume "$(pwd)/fastcgi:/mnt/runtime/fastcgi" \
+    --volume "$(pwd)/old-fastcgi-client:/mnt/runtime/old-fastcgi-client" \
     --volume "$(pwd)/litespeed-client:/mnt/runtime/litespeed-client" \
+    --volume "$(pwd)/php-sys:/mnt/runtime/php-sys" \
     --volume "$(pwd)/wordpress:/mnt/wordpress" \
     --volume "$(pwd)/config:/mnt/config" \
     --name runtime-dev \
     runtime-dev
+
+@bindings command="run":
+  docker run \
+    --rm \
+    --volume "$(pwd)/php-sys:/mnt/runtime/php-sys" \
+    --name build-bindings \
+    build-bindings \
+    {{command}}

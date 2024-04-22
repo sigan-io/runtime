@@ -452,6 +452,27 @@ RUN strip ${INSTALL_DIR}/lib/libssh2*.so*
 RUN strip ${INSTALL_DIR}/lib/libpsl*.so*
 RUN strip ${INSTALL_DIR}/lib64/libzip*.so*
 
+### Build PHP Bindings ###
+
+FROM build-php as build-bindings
+
+# Install Rust
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+
+ENV PATH=/root/.cargo/bin:${PATH}
+
+# Install dependencies
+
+RUN LD_LIBRARY_PATH= dnf install -y clang
+RUN LD_LIBRARY_PATH= dnf install -y bzip2-devel
+
+# Generate bindings
+
+WORKDIR /mnt/runtime/php-sys/
+
+ENTRYPOINT [ "cargo" ]
+
 ### Prepare PHP Layer ###
 
 FROM public.ecr.aws/lambda/provided:al2023-arm64 as php

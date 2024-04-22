@@ -1,9 +1,11 @@
 [workspace]
 resolver = "2"
-members  = ["runtime", "fastcgi-client", "litespeed-client"]
+members  = ["fastcgi", "litespeed-client", "php-lambda", "php-sys", "runtime"]
 
 [workspace.dependencies]
-tokio              = { version = "1.36.0", default-features = false }
-tracing            = { version = "0.1.40", default-features = false }
-tracing-subscriber = { version = "0.3.18", default-features = false }
-lambda_http        = { version = "0.9.3", default-features = false, features = ["apigw_http"] }
+tokio               = { version = "1.36.0", default-features = false }
+tracing             = { version = "0.1.40", default-features = false }
+tracing-subscriber  = { version = "0.3.18", default-features = false }
+lambda_http         = { version = "0.11.1", default-features = false, features = [
+    "apigw_http",
+] }

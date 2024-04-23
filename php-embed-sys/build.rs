@@ -1,6 +1,11 @@
 use std::path::PathBuf;
 
 fn main() {
+    // Prevents building this file outside Docker.
+    if cfg!(not(target_os = "linux")) {
+        return;
+    }
+
     // Tell cargo to look for shared libraries in the specified directory
     println!("cargo:rustc-link-search=/opt/lib");
 

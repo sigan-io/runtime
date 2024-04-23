@@ -20,10 +20,16 @@ fn main() {
         .clang_arg("-I/tmp/build/php/main")
         .clang_arg("-I/tmp/build/php/Zend")
         .clang_arg("-I/tmp/build/php/TSRM")
-        // Allow all function definitions.
+        // Allows PHP Embed SAPI functions.
         .allowlist_function("php_embed_init")
         .allowlist_function("php_embed_shutdown")
+        // Allows PHP SAPI functions.
+        .allowlist_function("php_request_startup")
+        .allowlist_function("php_request_shutdown")
+        .allowlist_function("php_execute_script")
+        // Allows Zend functions.
         .allowlist_function("zend_eval_string")
+        .allowlist_function("zend_string_init")
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))

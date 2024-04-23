@@ -1,7 +1,7 @@
 use crate::errors::HttpHeaderError;
 
-#[derive(Clone, Debug, Copy)]
 #[repr(u8)]
+#[derive(Clone, Debug, Copy)]
 pub enum HttpHeader {
     Accept,
     AcceptCharset,
@@ -158,12 +158,12 @@ impl CommonHttpHeadersIndex {
     }
 }
 
-pub struct UnknownHttpHeader {
-    name_offset: u32,
-    name_length: u32,
-    value_offset: u32,
-    value_length: u32,
-}
+// pub struct UnknownHttpHeader {
+//     name_offset: u32,
+//     name_length: u32,
+//     value_offset: u32,
+//     value_length: u32,
+// }
 
 // pub struct ResponseInfo {
 //     headers_count: u32,

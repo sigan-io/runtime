@@ -28,8 +28,8 @@ fn main() {
         .allowlist_function("php_request_shutdown")
         .allowlist_function("php_execute_script")
         // Allows Zend functions.
-        .allowlist_function("zend_eval_string")
         .allowlist_function("zend_string_init")
+        .allowlist_function("zend_string_init_fast")
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))

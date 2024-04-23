@@ -15,7 +15,6 @@ regex-lite = { version = "0.1.5" }
 elegant-departure = { version = "0.2.1", default-features = false, features = [
     "tokio",
 ] }
-php-lambda = { path = "../php-lambda" }
 fastcgi = { path = "../fastcgi" }
 fastcgi-client = { path = "../old-fastcgi-client", default-features = false }
 litespeed-client = { path = "../litespeed-client" }

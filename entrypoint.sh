@@ -17,7 +17,7 @@ echo -e "\n \e[32mINFO\e[0m Initializing watcher..."
 
 exec cargo watch \
   --quiet \
-  --ignore "${RUNTIME_DEV_DIR}/target*" \
+  --ignore "/mnt/runtime/target*" \
   --shell \
   'echo -e "\n \e[32mINFO\e[0m Building runtime...\n" && \
   cargo build --color always && \

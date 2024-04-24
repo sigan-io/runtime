@@ -1,11 +1,22 @@
-use std::path::PathBuf;
+use std::env;
+use std::path::Path;
 
 fn main() {
-    // Prevents building this file outside Docker.
-    if cfg!(not(target_os = "linux")) {
-        return;
+    // Set output file.
+    let bindings_file = Path::new("./src/bindings.rs");
+
+    // Prevents generating bindings outside Docker.
+    if env::var("RUNNING_IN_DOCKER").is_ok() {
+        generate_bindings(&bindings_file);
     }
 
+    // Sets a cfg variable to prevent including bindings file if it doesn't exist.
+    if bindings_file.exists() {
+        println!("cargo:rustc-cfg=include_bindings")
+    }
+}
+
+fn generate_bindings(output_file: &Path) {
     // Tell cargo to look for shared libraries in the specified directory
     println!("cargo:rustc-link-search=/opt/lib");
 
@@ -25,6 +36,7 @@ fn main() {
         .clang_arg("-I/tmp/build/php/main")
         .clang_arg("-I/tmp/build/php/Zend")
         .clang_arg("-I/tmp/build/php/TSRM")
+        .clang_arg("-DRUNNING_IN_DOCKER")
         // Allows PHP Embed SAPI functions.
         .allowlist_function("php_embed_init")
         .allowlist_function("php_embed_shutdown")
@@ -46,8 +58,7 @@ fn main() {
         .expect("Unable to generate bindings");
 
     // Write the bindings to the $OUT_DIR/bindings.rs file.
-    let out_path = PathBuf::from("./src/");
     bindings
-        .write_to_file(out_path.join("bindings.rs"))
+        .write_to_file(output_file)
         .expect("Couldn't write bindings!");
 }

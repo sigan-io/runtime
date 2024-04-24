@@ -1,3 +1,6 @@
+@default:
+  just --list
+
 install:
   composer install --working-dir=old/wp-runtime-prod --optimize-autoloader --no-dev
 
@@ -54,16 +57,75 @@ run-dev:
     --volume "$(pwd)/fastcgi:/mnt/runtime/fastcgi" \
     --volume "$(pwd)/old-fastcgi-client:/mnt/runtime/old-fastcgi-client" \
     --volume "$(pwd)/litespeed-client:/mnt/runtime/litespeed-client" \
-    --volume "$(pwd)/php-sys:/mnt/runtime/php-sys" \
+    --volume "$(pwd)/php-embed-sys:/mnt/runtime/php-embed-sys" \
     --volume "$(pwd)/wordpress:/mnt/wordpress" \
     --volume "$(pwd)/config:/mnt/config" \
     --name runtime-dev \
     runtime-dev
 
-@bindings command="run":
+bindings command="run":
   docker run \
     --rm \
-    --volume "$(pwd)/php-sys:/mnt/runtime/php-sys" \
+    --volume "$(pwd)/php-embed-sys:/mnt/runtime/php-embed-sys" \
     --name build-bindings \
     build-bindings \
     {{command}}
+
+# Builds Docker images or Rust libraries depending on the target.
+build target:
+  #!/usr/bin/env sh
+  if [ "{{target}}" = "setup" ]; then
+    name=sigan/runtime:setup
+    docker build --target build-setup --tag $name .
+    docker image rm $name
+
+  elif [ "{{target}}" = "dependencies" ]; then
+    name=sigan/runtime:dependencies
+    docker build --target build-dependencies --tag $name .
+    docker image rm $name
+
+  elif [ "{{target}}" = "php" ]; then
+    name=sigan/runtime:php
+    docker build --target build-php --tag $name .
+    docker image rm $name
+
+  elif [ "{{target}}" = "dev" ]; then
+    name=sigan/runtime:dev
+    docker build --target development --tag $name .
+  
+  elif [ "{{target}}" = "prod" ]; then
+    name=sigan/runtime:prod
+    docker build --target production --tag $name .
+
+  elif [ "{{target}}" = "bindings" ]; then
+    image=sigan/runtime:dev
+    container=sigan-runtime-dev
+    docker run \
+      --rm \
+      --volume "$(pwd)/php-embed-sys:/mnt/runtime/php-embed-sys" \
+      --env "RUNNING_IN_DOCKER=true" \
+      --name $container \
+      $image \
+      /bin/sh -c "cd php-embed-sys && cargo build"
+
+  else
+    echo "Build target unknown.\n"
+    exit 1
+  fi
+
+open target:
+  #!/usr/bin/env sh
+  if [ "{{target}}" = "dev" ]; then
+    image=sigan/runtime:dev
+    container=sigan-runtime-dev
+    docker run \
+      --rm \
+      --interactive \
+      --tty \
+      --name $container \
+      $image \
+      /bin/sh
+  fi
+# @run target:
+#   if [ "{{target}}" = "setup"] then
+#     docker run --rm --name setup setup

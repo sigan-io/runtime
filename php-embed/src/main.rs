@@ -1,19 +1,19 @@
-use php_embed::zend_string;
+use php_embed_sys::zend_string;
 use std::borrow::Cow;
 use std::ffi::c_char;
 use std::marker::PhantomData;
 
 fn main() {
     unsafe {
-        php_embed::php_embed_init(0, std::ptr::null_mut());
+        php_embed_sys::php_embed_init(0, std::ptr::null_mut());
 
-        php_embed::php_request_startup();
+        php_embed_sys::php_request_startup();
 
-        // php_embed::php_execute_script(primary_file);
+        // php_embed_sys::php_execute_script(primary_file);
 
-        php_embed::php_request_shutdown(std::ptr::null_mut());
+        php_embed_sys::php_request_shutdown(std::ptr::null_mut());
 
-        php_embed::php_embed_shutdown();
+        php_embed_sys::php_embed_shutdown();
     }
 }
 

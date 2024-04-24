@@ -524,18 +524,20 @@ FROM build-php as strip-binaries
 
 # RUN strip ${INSTALL_DIR}/bin/php-cgi
 # RUN strip ${INSTALL_DIR}/sbin/php-fpm
-RUN strip ${INSTALL_DIR}/lib/php/extensions/*/*.so
-RUN strip ${INSTALL_DIR}/lib/libicu*.so*
-RUN strip ${INSTALL_DIR}/lib/libonig*.so*
-RUN strip ${INSTALL_DIR}/lib/libssh2*.so*
-RUN strip ${INSTALL_DIR}/lib/libpsl*.so*
-RUN strip ${INSTALL_DIR}/lib64/libzip*.so*
+RUN strip ${INSTALL_DIR}/lib/php/extensions/**/*.so
+RUN strip ${INSTALL_DIR}/lib/libicu*.so
+RUN strip ${INSTALL_DIR}/lib/libonig*.so
+RUN strip ${INSTALL_DIR}/lib/libssh2*.so
+RUN strip ${INSTALL_DIR}/lib/libpsl*.so
+RUN strip ${INSTALL_DIR}/lib64/libzip*.so
 
 ####################################
 ### Setup Production Environment ###
 ####################################
 
 FROM public.ecr.aws/lambda/provided:al2023-arm64 as production
+
+ARG INSTALL_DIR=/opt
 
 # Copy PHP binaries
 
@@ -548,7 +550,7 @@ WORKDIR ${INSTALL_DIR}/bin/
 
 WORKDIR ${INSTALL_DIR}/sigan/extensions/
 
-COPY --from=strip-binaries ${INSTALL_DIR}/lib/php/extensions/*/*.so .
+COPY --from=strip-binaries ${INSTALL_DIR}/lib/php/extensions/**/*.so .
 
 # Copy PHP configuration
 
@@ -562,11 +564,11 @@ COPY ./config/php-fpm.conf .
 
 WORKDIR ${INSTALL_DIR}/lib/
 
-COPY --from=strip-binaries ${INSTALL_DIR}/lib/libphp*.so* .
-COPY --from=strip-binaries ${INSTALL_DIR}/lib/libicu*.so* .
-COPY --from=strip-binaries ${INSTALL_DIR}/lib/libonig*.so* .
-COPY --from=strip-binaries ${INSTALL_DIR}/lib/libssh2*.so* .
-COPY --from=strip-binaries ${INSTALL_DIR}/lib/libpsl*.so* .
-COPY --from=strip-binaries ${INSTALL_DIR}/lib64/libzip*.so* .
+COPY --from=strip-binaries ${INSTALL_DIR}/lib/libphp*.so .
+COPY --from=strip-binaries ${INSTALL_DIR}/lib/libicu*.so .
+COPY --from=strip-binaries ${INSTALL_DIR}/lib/libonig*.so .
+COPY --from=strip-binaries ${INSTALL_DIR}/lib/libssh2*.so .
+COPY --from=strip-binaries ${INSTALL_DIR}/lib/libpsl*.so .
+COPY --from=strip-binaries ${INSTALL_DIR}/lib64/libzip*.so .
 
 WORKDIR /var/task

@@ -125,7 +125,23 @@ open target:
       --name $container \
       $image \
       /bin/sh
+
+  elif [ "{{target}}" = "prod" ]; then
+    image=sigan/runtime:prod
+    container=sigan-runtime-prod
+    docker run \
+      --rm \
+      --interactive \
+      --tty \
+      --name $container \
+      $image \
+      /bin/sh
+
+  else
+    echo "Open target unknown.\n"
+    exit 1
   fi
+
 # @run target:
 #   if [ "{{target}}" = "setup"] then
 #     docker run --rm --name setup setup

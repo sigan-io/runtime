@@ -476,13 +476,13 @@ RUN make -j$(nproc) \
   && make clean \
   && rm -rf ${BUILD_DIR}/imagick/
 
-#####################################
-### Setup Development Environment ###
-#####################################
+####################
+### Install Rust ###
+####################
 
-FROM build-php as development
+FROM build-php as install-rust
 
-WORKDIR /mnt/runtime/
+WORKDIR ${BUILD_DIR}/rust/
 
 # Install Rust
 
@@ -496,18 +496,72 @@ ENV PATH=/root/.cargo/bin:${PATH}
 RUN set -e \
   && export CARGO_WATCH_VERSION=8.5.2 \  
   && curl --location --silent --show-error --fail https://github.com/watchexec/cargo-watch/releases/download/v${CARGO_WATCH_VERSION}/cargo-watch-v${CARGO_WATCH_VERSION}-aarch64-unknown-linux-gnu.tar.xz \
-  | tar xJC /usr/local/bin --strip-components=1
+  | tar xJC /root/.cargo/bin --strip-components=1
 
 # Install cargo-lambda
 
 RUN set -e \
   && export CARGO_LAMBDA_VERSION=1.2.1 \  
   && curl --location --silent --show-error --fail https://github.com/cargo-lambda/cargo-lambda/releases/download/v${CARGO_LAMBDA_VERSION}/cargo-lambda-v${CARGO_LAMBDA_VERSION}.aarch64-unknown-linux-musl.tar.gz \
-  | tar -xzC /usr/local/bin
+  | tar -xzC /root/.cargo/bin
+
+#####################################
+### Setup Development Environment ###
+#####################################
+
+FROM public.ecr.aws/lambda/provided:al2023-arm64 as development
+
+ENTRYPOINT []
+
+ARG BUILD_DIR=/tmp/build
+ARG INSTALL_DIR=/opt
+
+# Copy PHP binaries
+
+WORKDIR ${INSTALL_DIR}/bin/
+
+# COPY --from=strip-binaries ${INSTALL_DIR}/bin/php-cgi .
+# COPY --from=strip-binaries ${INSTALL_DIR}/sbin/php-fpm .
+
+# Copy PHP extensions
+
+WORKDIR ${INSTALL_DIR}/sigan/extensions/
+
+COPY --from=build-php ${INSTALL_DIR}/lib/php/extensions/**/*.so .
+
+# Copy PHP configuration
+
+WORKDIR ${INSTALL_DIR}/sigan/config/
+
+COPY ./config/php-cgi.ini .
+COPY ./config/php-fpm.ini .
+COPY ./config/php-fpm.conf .
+
+# Copy dependencies
+
+WORKDIR ${INSTALL_DIR}/lib/
+
+COPY --from=build-php ${INSTALL_DIR}/lib/libphp*.so .
+COPY --from=build-php ${INSTALL_DIR}/lib/libicu*.so .
+COPY --from=build-php ${INSTALL_DIR}/lib/libonig*.so .
+COPY --from=build-php ${INSTALL_DIR}/lib/libssh2*.so .
+COPY --from=build-php ${INSTALL_DIR}/lib/libpsl*.so .
+COPY --from=build-php ${INSTALL_DIR}/lib64/libzip*.so .
+
+# Copy PHP source code for Rust bindings
+
+COPY --from=build-php ${BUILD_DIR}/php ${BUILD_DIR}/php
 
 # Install utilities needed for Rust bindings
 
 RUN LD_LIBRARY_PATH= dnf install -y clang bzip2-devel
+
+# Copy Rust binaries
+
+COPY --from=install-rust /root/.cargo /root/.cargo
+COPY --from=install-rust /root/.rustup /root/.rustup
+
+ENV PATH=/root/.cargo/bin:${PATH}
 
 # Set AWS Lambda environment variables
 
@@ -515,6 +569,8 @@ ENV AWS_LAMBDA_FUNCTION_NAME=runtime
 ENV AWS_LAMBDA_FUNCTION_VERSION=1
 ENV AWS_LAMBDA_FUNCTION_MEMORY_SIZE=2048
 ENV AWS_LAMBDA_RUNTIME_API=http://127.0.0.1:8080/.rt
+
+WORKDIR /mnt/runtime
 
 ######################
 ### Strip Binaries ###
@@ -536,6 +592,8 @@ RUN strip ${INSTALL_DIR}/lib64/libzip*.so
 ####################################
 
 FROM public.ecr.aws/lambda/provided:al2023-arm64 as production
+
+ENTRYPOINT []
 
 ARG INSTALL_DIR=/opt
 

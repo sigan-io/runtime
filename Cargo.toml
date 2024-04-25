@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members  = ["fastcgi", "litespeed-client", "php-embed", "php-embed-sys", "runtime"]
+members  = ["php-embed", "php-embed-sys", "runtime"]
 
 [workspace.dependencies]
 tokio               = { version = "1.36.0", default-features = false }

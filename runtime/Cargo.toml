@@ -15,9 +15,6 @@ regex-lite = { version = "0.1.5" }
 elegant-departure = { version = "0.2.1", default-features = false, features = [
     "tokio",
 ] }
-fastcgi = { path = "../fastcgi" }
-fastcgi-client = { path = "../old-fastcgi-client", default-features = false }
-litespeed-client = { path = "../litespeed-client" }
 serde = { version = "1.0.196", default-features = false }
 tokio = { workspace = true, features = ["macros"] }
 tracing = { workspace = true, features = ["log"] }

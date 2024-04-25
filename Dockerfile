@@ -534,7 +534,7 @@ COPY --from=build-php ${INSTALL_DIR}/lib/php/extensions/**/*.so .
 
 WORKDIR ${INSTALL_DIR}/sigan/config/
 
-COPY ./config/* .
+COPY ./config .
 
 # Copy dependencies
 
@@ -551,7 +551,7 @@ COPY --from=build-php ${INSTALL_DIR}/lib64/libzip*.so .
 
 WORKDIR ${INSTALL_DIR}/include/php/
 
-COPY --from=build-php ${INSTALL_DIR}/include/php/* .
+COPY --from=build-php ${INSTALL_DIR}/include/php .
 
 # Install utilities needed for Rust bindings
 

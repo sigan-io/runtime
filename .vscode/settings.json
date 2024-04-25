@@ -1,4 +1,5 @@
 {
   "rust-analyzer.cargo.features": "all",
-  "rust-analyzer.showUnlinkedFileNotification": false
+  "rust-analyzer.showUnlinkedFileNotification": false,
+  "C_Cpp.errorSquiggles": "disabled"
 }

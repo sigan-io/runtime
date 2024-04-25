@@ -388,6 +388,7 @@ RUN CFLAGS="-fstack-protector-strong -fpic -fpie -O3 -I${INSTALL_DIR}/include -I
   --disable-all \
   # --disable-cli \
   --disable-phpdbg \
+  --disable-cgi \
   # Enable desired binaries
   --enable-embed \
   # Required by WP
@@ -472,6 +473,8 @@ RUN make -j$(nproc) \
   && make clean \
   && rm -rf ${BUILD_DIR}/imagick/
 
+WORKDIR ${INSTALL_DIR}
+
 ####################
 ### Install Rust ###
 ####################
@@ -516,8 +519,10 @@ ARG INSTALL_DIR=/opt
 
 WORKDIR ${INSTALL_DIR}/bin/
 
-# COPY --from=strip-binaries ${INSTALL_DIR}/bin/php-cgi .
-# COPY --from=strip-binaries ${INSTALL_DIR}/sbin/php-fpm .
+COPY --from=build-php ${INSTALL_DIR}/bin/php .
+COPY --from=build-php ${INSTALL_DIR}/bin/php-config .
+# COPY --from=build-php ${INSTALL_DIR}/bin/php-cgi .
+# COPY --from=build-php ${INSTALL_DIR}/sbin/php-fpm .
 
 # Copy PHP extensions
 
@@ -529,9 +534,7 @@ COPY --from=build-php ${INSTALL_DIR}/lib/php/extensions/**/*.so .
 
 WORKDIR ${INSTALL_DIR}/sigan/config/
 
-COPY ./config/php-cgi.ini .
-COPY ./config/php-fpm.ini .
-COPY ./config/php-fpm.conf .
+COPY ./config/* .
 
 # Copy dependencies
 
@@ -544,15 +547,17 @@ COPY --from=build-php ${INSTALL_DIR}/lib/libssh2*.so .
 COPY --from=build-php ${INSTALL_DIR}/lib/libpsl*.so .
 COPY --from=build-php ${INSTALL_DIR}/lib64/libzip*.so .
 
-# Copy PHP source code for Rust bindings
+# Copy PHP headers for Rust bindings
 
-COPY --from=build-php ${BUILD_DIR}/php ${BUILD_DIR}/php
+WORKDIR ${INSTALL_DIR}/include/php/
+
+COPY --from=build-php ${INSTALL_DIR}/include/php/* .
 
 # Install utilities needed for Rust bindings
 
 RUN LD_LIBRARY_PATH= dnf install -y clang bzip2-devel
 
-# Copy Rust binaries
+# Copy Rust and Cargo
 
 COPY --from=install-rust /root/.cargo /root/.cargo
 COPY --from=install-rust /root/.rustup /root/.rustup

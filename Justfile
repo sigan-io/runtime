@@ -85,6 +85,17 @@ open target:
         $image \
         /bin/sh
 
+    elif [ "{{ target }}" = "php" ]; then
+      image=sigan/runtime:php
+      container=sigan-runtime-php
+      docker run \
+        --rm \
+        --interactive \
+        --tty \
+        --name $container \
+        $image \
+        /bin/sh
+
     elif [ "{{ target }}" = "dev" ]; then
       image=sigan/runtime:dev
       container=sigan-runtime-dev

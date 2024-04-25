@@ -44,10 +44,10 @@ FROM build-setup as build-dependencies
 #   - php-zlib
 #   - libzip
 
-ARG ZLIB_VERSION=1.3.1
-
 WORKDIR ${BUILD_DIR}/zlib/
+
 RUN set -e \
+  && ZLIB_VERSION=1.3.1 \
   && curl --location --silent --show-error --fail https://github.com/madler/zlib/releases/download/v${ZLIB_VERSION}/zlib-${ZLIB_VERSION}.tar.gz \
   | tar xzvC . --strip-components=1
 
@@ -56,6 +56,7 @@ RUN CFLAGS="-O3" \
   LDFLAGS="-L${INSTALL_DIR}/lib64 -L${INSTALL_DIR}/lib" \
   ./configure \
   --prefix=${INSTALL_DIR}
+
 RUN make -j$(nproc) \
   && make install \
   && make clean \
@@ -65,11 +66,10 @@ RUN make -j$(nproc) \
 # Needed by:
 #   - php-intl
 
-ARG ICU_VERSION=74.2
-
 WORKDIR ${BUILD_DIR}/icu/
 
 RUN set -e \
+  && ICU_VERSION=74.2 \
   && curl --location --silent --show-error --fail https://github.com/unicode-org/icu/releases/download/release-${ICU_VERSION//./-}/icu4c-${ICU_VERSION//./_}-src.tgz \
   | tar xzC . --strip-components=1
 
@@ -80,6 +80,7 @@ RUN CFLAGS="-O3" \
   LDFLAGS="-L${INSTALL_DIR}/lib64 -L${INSTALL_DIR}/lib" \
   ./configure \
   --prefix=${INSTALL_DIR}
+
 RUN make -j$(nproc) \
   && make install \
   && make clean \
@@ -89,11 +90,10 @@ RUN make -j$(nproc) \
 # Needed by:
 #   - php-mbstring
 
-ARG ONIGURUMA_VERSION=6.9.9
-
 WORKDIR ${BUILD_DIR}/oniguruma/
 
 RUN set -e \
+  && ONIGURUMA_VERSION=6.9.9 \
   && curl --location --silent --show-error --fail https://github.com/kkos/oniguruma/releases/download/v${ONIGURUMA_VERSION}/onig-${ONIGURUMA_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
 
@@ -102,6 +102,7 @@ RUN CFLAGS="-O3" \
   LDFLAGS="-L${INSTALL_DIR}/lib64 -L${INSTALL_DIR}/lib" \
   ./configure \
   --prefix=${INSTALL_DIR}
+
 RUN make -j$(nproc) \
   && make install \
   && make clean \
@@ -111,11 +112,10 @@ RUN make -j$(nproc) \
 # Needed by:
 #   - php-zip
 
-ARG LIBZIP_VERSION=1.10.1
-
 WORKDIR ${BUILD_DIR}/libzip/
 
 RUN set -e \
+  && LIBZIP_VERSION=1.10.1 \
   && curl --location --silent --show-error --fail https://github.com/nih-at/libzip/releases/download/v${LIBZIP_VERSION}/libzip-${LIBZIP_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
 
@@ -125,6 +125,7 @@ RUN CFLAGS="-O3" \
   cmake \
   -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
   -DCMAKE_BUILD_TYPE=RELEASE
+
 RUN make -j$(nproc) \
   && make install \
   && make clean \
@@ -138,14 +139,10 @@ RUN make -j$(nproc) \
 #   - curl
 #   - php-openssl
 
-ARG OPENSSL_VERSION=3.2.1
-
-ARG CA_BUNDLE_SOURCE="https://curl.se/ca/cacert.pem"
-ARG CA_BUNDLE="${INSTALL_DIR}/sigan/ssl/cert.pem"
-
 WORKDIR ${BUILD_DIR}/openssl/
 
 RUN set -e \
+  && OPENSSL_VERSION=3.2.1 \
   && curl --location --silent --show-error --fail https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
 
@@ -160,9 +157,10 @@ RUN CFLAGS="-O3" \
   no-tests \
   shared \
   zlib
+
 RUN make -j$(nproc) \
   && make install -p ${INSTALL_DIR}/sigan/ssl \
-  && curl -Lk -o ${CA_BUNDLE} ${CA_BUNDLE_SOURCE} \
+  && CA_BUNDLE_SOURCE="https://curl.se/ca/cacert.pem" CA_BUNDLE="${INSTALL_DIR}/sigan/ssl/cert.pem" && curl -Lk -o ${CA_BUNDLE} ${CA_BUNDLE_SOURCE} \
   && make clean \
   && rm -rf ${BUILD_DIR}/openssl/
 
@@ -173,11 +171,10 @@ RUN make -j$(nproc) \
 #   - php-curl
 #   - libnghttp2
 
-ARG XML2_VERSION=2.12.5
-
 WORKDIR  ${BUILD_DIR}/xml2/
 
 RUN set -e \
+  && XML2_VERSION=2.12.5 \
   && curl --location --silent --show-error --fail https://download.gnome.org/sources/libxml2/${XML2_VERSION%.*}/libxml2-${XML2_VERSION}.tar.xz \
   | tar xJC . --strip-components=1
 
@@ -195,6 +192,7 @@ RUN CFLAGS="-O3" \
   --with-icu \
   --with-zlib \
   --without-python
+
 RUN make -j$(nproc) \
   && make install \
   && cp xml2-config ${INSTALL_DIR}/bin/xml2-config \
@@ -208,11 +206,10 @@ RUN make -j$(nproc) \
 # Needed by:
 #   - curl
 
-ARG LIBSSH2_VERSION=1.11.0
-
 WORKDIR  ${BUILD_DIR}/libssh2/
 
 RUN set -e \
+  && LIBSSH2_VERSION=1.11.0 \
   && curl --location --silent --show-error --fail https://github.com/libssh2/libssh2/releases/download/libssh2-${LIBSSH2_VERSION}/libssh2-${LIBSSH2_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
 
@@ -229,6 +226,7 @@ RUN CFLAGS="-O3" \
   --disable-examples-build \
   --disable-docker-tests \
   --disable-sshd-tests
+
 RUN make -j$(nproc) \
   && make install \
   && make clean \
@@ -241,11 +239,10 @@ RUN make -j$(nproc) \
 # Needed by:
 #   - curl
 
-ARG NGHTTP2_VERSION=1.59.0
-
 WORKDIR  ${BUILD_DIR}/nghttp2
 
 RUN set -e \
+  && NGHTTP2_VERSION=1.59.0 \
   && curl --location --silent --show-error --fail https://github.com/nghttp2/nghttp2/releases/download/v${NGHTTP2_VERSION}/nghttp2-${NGHTTP2_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
 
@@ -256,6 +253,7 @@ RUN CFLAGS="-O3" \
   --prefix=${INSTALL_DIR} \
   --enable-lib-only \
   --enable-http3
+
 RUN make -j$(nproc) \
   && make install \
   && make clean \
@@ -265,11 +263,10 @@ RUN make -j$(nproc) \
 # Needed by:
 #   - curl
 
-ARG LIBPSL_VERSION=0.21.5
-
 WORKDIR ${BUILD_DIR}/libpsl/
 
 RUN set -e \
+  && LIBPSL_VERSION=0.21.5 \
   && curl --location --silent --show-error --fail https://github.com/rockdaboot/libpsl/releases/download/${LIBPSL_VERSION}/libpsl-${LIBPSL_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
 
@@ -278,6 +275,7 @@ RUN CFLAGS="-O3" \
   LDFLAGS="-L${INSTALL_DIR}/lib64 -L${INSTALL_DIR}/lib" \
   ./configure \
   --prefix=${INSTALL_DIR}
+
 RUN make -j$(nproc) \
   && make install \
   && make clean \
@@ -293,11 +291,10 @@ RUN make -j$(nproc) \
 # Needed by:
 #   - php-curl
 
-ARG CURL_VERSION=8.6.0
-
 WORKDIR  ${BUILD_DIR}/curl/
 
 RUN set -e \
+  && CURL_VERSION=8.6.0 \
   && curl --location --silent --show-error --fail https://github.com/curl/curl/releases/download/curl-${CURL_VERSION//./_}/curl-${CURL_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
 
@@ -323,6 +320,7 @@ RUN CFLAGS="-O3" \
   --with-ssl \
   --with-libssh2 \
   --with-nghttp2
+
 RUN make -j$(nproc) \
   && make install \
   && make clean \
@@ -335,11 +333,10 @@ RUN make -j$(nproc) \
 # Needed by:
 #   - php-imagick
 
-ARG IMAGEMAGICK_VERSION=7.1.1-28
-
 WORKDIR ${BUILD_DIR}/imagemagick/
 
 RUN set -e \
+  && IMAGEMAGICK_VERSION=7.1.1-28 \
   && curl --location --silent --show-error --fail https://github.com/ImageMagick/ImageMagick/archive/refs/tags/${IMAGEMAGICK_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
 
@@ -356,6 +353,7 @@ RUN CFLAGS="-O3" \
   --without-perl \
   --without-magick-plus-plus \
   --without-x
+
 RUN make -j$(nproc) \
   && make install \
   && make clean \
@@ -367,15 +365,12 @@ RUN make -j$(nproc) \
 
 FROM build-dependencies as build-php
 
-ARG PHP_VERSION=8.3.2
-
 WORKDIR ${BUILD_DIR}/php/
 
 RUN set -e \
+  && PHP_VERSION=8.3.2 \
   && curl --location --silent --show-error --fail https://github.com/php/php-src/archive/refs/tags/php-${PHP_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
-
-ARG STRIP=--strip-debug
 
 RUN ./buildconf --force
 
@@ -384,7 +379,7 @@ RUN ./buildconf --force
 # Node: libxml is required by dom
 RUN CFLAGS="-fstack-protector-strong -fpic -fpie -O3 -I${INSTALL_DIR}/include -I/usr/include -ffunction-sections -fdata-sections" \
   CPPFLAGS="-fstack-protector-strong -fpic -fpie -O3 -I${INSTALL_DIR}/include -I/usr/include -ffunction-sections -fdata-sections" \
-  LDFLAGS="-L${INSTALL_DIR}/lib64 -L${INSTALL_DIR}/lib -Wl,-O1 -Wl,${STRIP} -Wl,--hash-style=both -pie" \
+  LDFLAGS="-L${INSTALL_DIR}/lib64 -L${INSTALL_DIR}/lib -Wl,-O1 -Wl,--hash-style=both -pie" \
   ./configure \
   --prefix=${INSTALL_DIR} \
   --enable-option-checking=fatal \
@@ -416,17 +411,17 @@ RUN CFLAGS="-fstack-protector-strong -fpic -fpie -O3 -I${INSTALL_DIR}/include -I
   --enable-opcache \
   --with-zlib \
   --with-gettext
+
 RUN make -j$(nproc) \
   && make install \
   && make clean
 
 # Build igbinary extension
 
-ARG IGBINARY_VERSION=3.2.15
-
 WORKDIR ${BUILD_DIR}/igbinary/
 
 RUN set -e \
+  && IGBINARY_VERSION=3.2.15 \
   && curl --location --silent --show-error --fail https://github.com/igbinary/igbinary/archive/refs/tags/${IGBINARY_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
 
@@ -434,6 +429,7 @@ RUN phpize
 RUN CFLAGS="-O3" \
   ./configure \
   --enable-igbinary
+
 RUN make -j$(nproc) \
   && make install \
   && make clean \
@@ -441,11 +437,10 @@ RUN make -j$(nproc) \
 
 # Build redis extension
 
-ARG PHPREDIS_VERSION=6.0.2
-
 WORKDIR ${BUILD_DIR}/phpredis/
 
 RUN set -e \
+  && PHPREDIS_VERSION=6.0.2 \
   && curl --location --silent --show-error --fail https://github.com/phpredis/phpredis/archive/refs/tags/${PHPREDIS_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
 
@@ -453,6 +448,7 @@ RUN phpize
 RUN CFLAGS="-O3" \
   ./configure \
   --enable-redis-igbinary
+
 RUN make -j$(nproc) \
   && make install \
   && make clean \
@@ -460,17 +456,17 @@ RUN make -j$(nproc) \
 
 # Build imagick extension
 
-ARG IMAGICK_VERSION=3.7.0
-
 WORKDIR ${BUILD_DIR}/imagick/
 
 RUN set -e \
+  && IMAGICK_VERSION=3.7.0 \
   && curl --location --silent --show-error --fail https://github.com/Imagick/imagick/archive/refs/tags/${IMAGICK_VERSION}.tar.gz \
   | tar xzC . --strip-components=1
 
 RUN phpize
 RUN CFLAGS="-O3" \
   ./configure
+
 RUN make -j$(nproc) \
   && make install \
   && make clean \
@@ -494,14 +490,14 @@ ENV PATH=/root/.cargo/bin:${PATH}
 # Install cargo-watch
 
 RUN set -e \
-  && export CARGO_WATCH_VERSION=8.5.2 \  
+  && CARGO_WATCH_VERSION=8.5.2 \  
   && curl --location --silent --show-error --fail https://github.com/watchexec/cargo-watch/releases/download/v${CARGO_WATCH_VERSION}/cargo-watch-v${CARGO_WATCH_VERSION}-aarch64-unknown-linux-gnu.tar.xz \
   | tar xJC /root/.cargo/bin --strip-components=1
 
 # Install cargo-lambda
 
 RUN set -e \
-  && export CARGO_LAMBDA_VERSION=1.2.1 \  
+  && CARGO_LAMBDA_VERSION=1.2.1 \  
   && curl --location --silent --show-error --fail https://github.com/cargo-lambda/cargo-lambda/releases/download/v${CARGO_LAMBDA_VERSION}/cargo-lambda-v${CARGO_LAMBDA_VERSION}.aarch64-unknown-linux-musl.tar.gz \
   | tar -xzC /root/.cargo/bin
 

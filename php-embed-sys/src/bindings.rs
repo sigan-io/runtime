@@ -43359,29 +43359,13 @@ extern "C" {
     pub fn php_hash_environment() -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn php_embed_init(
-        argc: ::std::os::raw::c_int,
-        argv: *mut *mut ::std::os::raw::c_char,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn php_embed_shutdown();
-}
-extern "C" {
-    pub static mut php_embed_module: sapi_module_struct;
-}
-extern "C" {
     pub fn sigan_zend_string_init(
         str_: *const ::std::os::raw::c_char,
         len: usize,
-        persistent: bool,
     ) -> *mut zend_string;
 }
 extern "C" {
-    pub fn sigan_zend_string_init_fast(
-        str_: *const ::std::os::raw::c_char,
-        len: usize,
-    ) -> *mut zend_string;
+    pub fn sigan_zend_string_release(str_: *mut zend_string);
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]

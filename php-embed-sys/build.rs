@@ -4,15 +4,15 @@ use std::process::Command;
 
 fn main() {
     // Set output file.
-    let bindings_file = Path::new("./src/bindings.rs");
+    let output_file = Path::new("./src/bindings.rs");
 
     // Prevents generating bindings outside Docker.
     if env::var("RUNNING_IN_DOCKER").is_ok() {
-        generate_bindings(&bindings_file);
+        generate_bindings(&output_file);
     }
 
     // Sets a cfg variable to prevent including bindings file if it doesn't exist.
-    if bindings_file.exists() {
+    if output_file.exists() {
         println!("cargo:rustc-cfg=include_bindings")
     }
 }
@@ -25,41 +25,37 @@ fn generate_bindings(output_file: &Path) {
     println!("cargo:rustc-link-lib=php");
 
     // Search for the php-config binary
-    let php_config = Command::new("find")
-        .arg("/")
-        .arg("-name")
-        .arg("php-config")
-        .output()
-        .map_or_else(
-            |error| panic!("Unable to find php-config: {:?}", error),
-            |output| {
-                if output.stdout.is_empty() {
-                    panic!("Unable to find php-config: {:?}", output.status);
-                }
+    let php_config: String = env::var("PHP_CONFIG").unwrap_or_else(|_| {
+        Command::new("which")
+            .arg("php-config")
+            .output()
+            .map_or_else(
+                |error| panic!("Unable to find php-config: {:?}", error),
+                |output| {
+                    if !output.status.success() {
+                        panic!("Unable to get php-config: {:?}", output.status);
+                    }
 
-                String::from_utf8(output.stdout)
-                    .expect("Failed to convert find output to string.")
-                    .trim()
-                    .to_owned()
-            },
-        );
+                    String::from_utf8_lossy(&output.stdout).trim().into()
+                },
+            )
+    });
 
     // Get the PHP includes from php-config
-    let includes = Command::new(&php_config)
+    let includes: Vec<String> = Command::new(&php_config)
         .arg("--includes")
         .output()
         .map_or_else(
             |error| panic!("Unable to run php-config: {:?} {:?}", error, php_config),
             |output| {
-                if output.stdout.is_empty() {
+                if !output.status.success() {
                     panic!("Unable to get includes: {:?}", output.status);
                 }
 
-                String::from_utf8(output.stdout)
-                    .expect("Failed to convert php-config output to string.")
+                String::from_utf8_lossy(&output.stdout)
                     .split_whitespace()
-                    .map(|include| include.to_owned())
-                    .collect::<Vec<String>>()
+                    .map(|include| include.into())
+                    .collect()
             },
         );
 

@@ -3,6 +3,11 @@
 #include <php.h>
 #include <php_ini.h>
 #include <php_main.h>
+#include <php_variables.h>
+
+// SAPI
+
+#include <SAPI.h>
 
 // Zend
 
@@ -10,18 +15,19 @@
 #include <zend_API.h>
 #include <zend_string.h>
 
-// Embed SAPI
+// Zend Functions
 
-#include <sapi/embed/php_embed.h>
-
-// Make private functions available to Rust
-
-zend_string *sigan_zend_string_init(const char *str, size_t len, bool persistent)
-{
-    return zend_string_init(str, len, persistent);
-}
-
-zend_string *sigan_zend_string_init_fast(const char *str, size_t len)
+zend_string *sigan_zend_string_init(const char *str, size_t len)
 {
     return zend_string_init_fast(str, len);
 }
+
+void sigan_zend_string_release(zend_string *str)
+{
+    return zend_string_release(str);
+}
+
+
+// TODO: Setup custom SAPI module.
+
+// TODO: Try `php_execute_script` and `php_register_variable` with name "_SERVER[variable_name]".

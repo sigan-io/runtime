@@ -524,17 +524,23 @@ COPY --from=build-php ${INSTALL_DIR}/bin/php-config .
 # COPY --from=build-php ${INSTALL_DIR}/bin/php-cgi .
 # COPY --from=build-php ${INSTALL_DIR}/sbin/php-fpm .
 
+ENV PHP_CONFIG=${INSTALL_DIR}/bin/php-config
+
 # Copy PHP extensions
 
 WORKDIR ${INSTALL_DIR}/sigan/extensions/
 
 COPY --from=build-php ${INSTALL_DIR}/lib/php/extensions/**/*.so .
 
+ENV PHP_EXTENSION_DIR=${INSTALL_DIR}/sigan/extensions
+
 # Copy PHP configuration
 
 WORKDIR ${INSTALL_DIR}/sigan/config/
 
 COPY ./config .
+
+ENV PHP_INI_DIR=${INSTALL_DIR}/sigan/config
 
 # Copy dependencies
 
@@ -555,7 +561,7 @@ COPY --from=build-php ${INSTALL_DIR}/include/php .
 
 # Install utilities needed for Rust bindings
 
-RUN LD_LIBRARY_PATH= dnf install -y clang bzip2-devel
+RUN LD_LIBRARY_PATH= dnf install -y clang bzip2-devel which
 
 # Copy Rust and Cargo
 
@@ -611,13 +617,15 @@ WORKDIR ${INSTALL_DIR}/sigan/extensions/
 
 COPY --from=strip-binaries ${INSTALL_DIR}/lib/php/extensions/**/*.so .
 
+ENV PHP_EXTENSION_DIR=${INSTALL_DIR}/sigan/extensions
+
 # Copy PHP configuration
 
 WORKDIR ${INSTALL_DIR}/sigan/config/
 
-COPY ./config/php-cgi.ini .
-COPY ./config/php-fpm.ini .
-COPY ./config/php-fpm.conf .
+COPY ./config/php.ini .
+
+ENV PHP_INI_DIR=${INSTALL_DIR}/sigan/config
 
 # Copy dependencies
 

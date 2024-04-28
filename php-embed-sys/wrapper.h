@@ -8,6 +8,7 @@
 // SAPI
 
 #include <SAPI.h>
+#include <sapi/embed/php_embed.h>
 
 // Zend
 

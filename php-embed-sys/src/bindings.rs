@@ -43359,6 +43359,18 @@ extern "C" {
     pub fn php_hash_environment() -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn php_embed_init(
+        argc: ::std::os::raw::c_int,
+        argv: *mut *mut ::std::os::raw::c_char,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn php_embed_shutdown();
+}
+extern "C" {
+    pub static mut php_embed_module: sapi_module_struct;
+}
+extern "C" {
     pub fn sigan_zend_string_init(
         str_: *const ::std::os::raw::c_char,
         len: usize,

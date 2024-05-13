@@ -1,7 +1,9 @@
 [package]
-name = "php-embed-sys"
+name    = "php-embed-sys"
 version = "0.1.0"
 edition = "2021"
+links   = "php"
 
 [build-dependencies]
 bindgen = "0.69.4"
+cc      = "1.0.97"

@@ -28,7 +28,6 @@ void sigan_zend_string_release(zend_string *str)
     return zend_string_release(str);
 }
 
-
 // TODO: Setup custom SAPI module.
 
 // TODO: Try `php_execute_script` and `php_register_variable` with name "_SERVER[variable_name]".

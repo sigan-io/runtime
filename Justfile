@@ -137,7 +137,6 @@ run target:
         --publish $HOST_PORT:8080 \
         --volume "$(pwd)/Cargo.toml:/mnt/runtime/Cargo.toml" \
         --volume "$(pwd)/Cargo.lock:/mnt/runtime/Cargo.lock" \
-        --volume "$(pwd)/.cargo/config.toml:/mnt/runtime/.cargo/config.toml" \
         --volume "$(pwd)/runtime:/mnt/runtime/runtime" \
         --volume "$(pwd)/php-embed:/mnt/runtime/php-embed" \
         --volume "$(pwd)/php-embed-sys:/mnt/runtime/php-embed-sys" \

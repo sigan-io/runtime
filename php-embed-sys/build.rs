@@ -67,8 +67,8 @@ fn generate_bindings(output_file: &Path) {
         // bindings for.
         .header("wrapper.h")
         // CLang arguments including all the needed dirs.
-        .clang_args(includes)
         .clang_arg("-DRUNNING_IN_DOCKER")
+        .clang_args(includes)
         // Block floating point constants that error.
         .blocklist_item("FP_.*")
         // Allows PHP Embed SAPI functions.
